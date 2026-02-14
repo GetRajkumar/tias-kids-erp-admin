@@ -110,14 +110,16 @@ export const PaymentSchedules = () => {
     },
   });
 
-  const { data: students } = useQuery({
-    queryKey: ['students'],
+  const { data: students, isLoading: studentsLoading, error: studentsError } = useQuery({
+    queryKey: ['students-for-schedule'],
     queryFn: async () => {
       const res = await studentsApi.getAll();
       console.log('Students loaded:', res.data);
       return res.data;
     },
   });
+
+  console.log('Students state:', { students, studentsLoading, studentsError });
 
   const createMutation = useMutation({
     mutationFn: (data: any) => paymentSchedulesApi.create(data),
@@ -443,14 +445,21 @@ export const PaymentSchedules = () => {
             <form onSubmit={handleSubmit(onCreateSubmit)}>
               <VStack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel>Student</FormLabel>
+                  <FormLabel>Student {studentsLoading && '(Loading...)'}</FormLabel>
                   <Select {...register('studentId')} placeholder="Select student">
-                    {students?.map((s: any) => (
-                      <option key={s._id} value={s._id}>
-                        {s.firstName} {s.lastName} ({s.studentId}) - {s.class}
-                      </option>
-                    ))}
+                    {students && students.length > 0 ? (
+                      students.map((s: any) => (
+                        <option key={s._id} value={s._id}>
+                          {s.firstName} {s.lastName} ({s.studentId}) - {s.class || 'No Class'}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No students available</option>
+                    )}
                   </Select>
+                  {students?.length === 0 && (
+                    <Text fontSize="sm" color="red.500">No students found. Approve an admission first.</Text>
+                  )}
                 </FormControl>
                 <FormControl isRequired>
                   <FormLabel>Academic Year</FormLabel>
