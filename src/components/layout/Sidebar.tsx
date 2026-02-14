@@ -6,6 +6,7 @@ import {
   FiUserPlus,
   FiCalendar,
   FiDollarSign,
+  FiCreditCard,
   FiMessageSquare,
   FiSettings,
 } from 'react-icons/fi';
@@ -15,6 +16,7 @@ const menuItems = [
   { icon: FiUsers, label: 'Students', path: '/students' },
   { icon: FiUserPlus, label: 'Admissions', path: '/admissions' },
   { icon: FiCalendar, label: 'Attendance', path: '/attendance' },
+  { icon: FiCreditCard, label: 'Fee Schedules', path: '/payment-schedules' },
   { icon: FiDollarSign, label: 'Payments', path: '/payments' },
   { icon: FiMessageSquare, label: 'Tickets', path: '/tickets' },
 ];

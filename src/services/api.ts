@@ -58,6 +58,17 @@ export const paymentsApi = {
     api.post(`/payments/${id}/complete`, { transactionId, paymentMethod }),
 };
 
+export const paymentSchedulesApi = {
+  getAll: (academicYear?: string) => api.get('/payment-schedules', { params: { academicYear } }),
+  getById: (id: string) => api.get(`/payment-schedules/${id}`),
+  create: (data: any) => api.post('/payment-schedules', data),
+  getByStudent: (studentId: string) => api.get(`/payment-schedules/student/${studentId}`),
+  getStudentSummary: (studentId: string) => api.get(`/payment-schedules/student/${studentId}/summary`),
+  getByParent: (parentId: string) => api.get(`/payment-schedules/parent/${parentId}`),
+  getOverdue: () => api.get('/payment-schedules/overdue'),
+  recordPayment: (data: any) => api.post('/payment-schedules/record-payment', data),
+};
+
 export const ticketsApi = {
   getAll: (status?: string) => api.get('/tickets', { params: { status } }),
   getById: (id: string) => api.get(`/tickets/${id}`),
