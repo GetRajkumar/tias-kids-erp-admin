@@ -95,7 +95,7 @@ export const AdmissionEnquiry = () => {
                 Application Submitted Successfully!
               </Heading>
               <Text color="gray.600" mb={6}>
-                Thank you for your interest in Tia's Kids Preschool. Our admissions team will
+                Thank you for your interest in Tiaz Kidz Preschool. Our admissions team will
                 review your application and contact you within 2-3 business days.
               </Text>
               <Button onClick={() => setSubmitted(false)} colorScheme="brand">
@@ -114,7 +114,7 @@ export const AdmissionEnquiry = () => {
         <VStack spacing={6} align="stretch">
           <Box textAlign="center" mb={4}>
             <Heading size="xl" color="brand.500" mb={2}>
-              Tia's Kids Preschool
+              Tiaz Kidz Preschool
             </Heading>
             <Heading size="md" fontWeight="normal" color="gray.600">
               Admission Enquiry Form
@@ -289,7 +289,7 @@ export const AdmissionEnquiry = () => {
           </Card>
 
           <Text textAlign="center" fontSize="sm" color="gray.500">
-            For any queries, contact us at admissions@tiaskids.com or call +91 98765 43210
+            For any queries, contact us at admissions@tiazkidz.com or call +91 98765 43210
           </Text>
         </VStack>
       </Container>

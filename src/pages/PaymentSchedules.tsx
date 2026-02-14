@@ -69,6 +69,7 @@ interface PaymentSchedule {
   totalDue: number;
   installments: Installment[];
   isFullyPaid: boolean;
+  notes?: string;
   createdAt: string;
 }
 
@@ -88,13 +89,17 @@ const planTypeLabels: Record<string, string> = {
 export const PaymentSchedules = () => {
   const [selectedSchedule, setSelectedSchedule] = useState<PaymentSchedule | null>(null);
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
+  const [editSchedule, setEditSchedule] = useState<PaymentSchedule | null>(null);
+  const [editInstallments, setEditInstallments] = useState<Installment[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isPayOpen, onOpen: onPayOpen, onClose: onPayClose } = useDisclosure();
+  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const { register, handleSubmit, reset } = useForm();
   const { register: registerPay, handleSubmit: handlePaySubmit, reset: resetPay } = useForm();
+  const { register: registerEdit, handleSubmit: handleEditSubmit, reset: resetEdit, setValue: setEditValue } = useForm();
 
   const { data: schedules, isLoading } = useQuery<PaymentSchedule[]>({
     queryKey: ['payment-schedules'],
@@ -155,6 +160,24 @@ export const PaymentSchedules = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => paymentSchedulesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payment-schedules'] });
+      toast({ title: 'Schedule updated', status: 'success' });
+      onEditClose();
+      setEditSchedule(null);
+      setSelectedSchedule(null);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Failed to update schedule', 
+        description: error?.response?.data?.message || error.message,
+        status: 'error' 
+      });
+    },
+  });
+
   const onCreateSubmit = (data: any) => {
     const student = students?.find((s: any) => s._id === data.studentId);
     
@@ -196,6 +219,47 @@ export const PaymentSchedules = () => {
     setSelectedSchedule(schedule);
     setSelectedInstallment(installment);
     onPayOpen();
+  };
+
+  const openEditModal = (schedule: PaymentSchedule) => {
+    setEditSchedule(schedule);
+    setEditInstallments([...schedule.installments]);
+    setEditValue('totalAmount', schedule.totalAmount);
+    setEditValue('advancePayment', schedule.advancePayment || 0);
+    setEditValue('paidOnAdmission', schedule.paidOnAdmission || 0);
+    setEditValue('notes', schedule.notes || '');
+    onEditOpen();
+  };
+
+  const updateInstallment = (index: number, field: 'amount' | 'dueDate', value: any) => {
+    const updated = [...editInstallments];
+    if (field === 'amount') {
+      updated[index] = { ...updated[index], amount: Number(value) };
+    } else {
+      updated[index] = { ...updated[index], dueDate: value };
+    }
+    setEditInstallments(updated);
+  };
+
+  const onEditSubmit = (data: any) => {
+    if (!editSchedule) return;
+    
+    const installmentsData = editInstallments.map(inst => ({
+      installmentNumber: inst.installmentNumber,
+      amount: inst.amount,
+      dueDate: typeof inst.dueDate === 'string' ? inst.dueDate : new Date(inst.dueDate).toISOString().split('T')[0],
+    }));
+
+    updateMutation.mutate({
+      id: editSchedule._id,
+      data: {
+        totalAmount: Number(data.totalAmount),
+        advancePayment: Number(data.advancePayment) || 0,
+        paidOnAdmission: Number(data.paidOnAdmission) || 0,
+        notes: data.notes,
+        installments: installmentsData,
+      },
+    });
   };
 
   if (isLoading) {
@@ -435,11 +499,104 @@ export const PaymentSchedules = () => {
               </VStack>
             </ModalBody>
             <ModalFooter>
+              <Button 
+                colorScheme="brand" 
+                mr={3} 
+                onClick={() => {
+                  openEditModal(selectedSchedule);
+                  setSelectedSchedule(null);
+                }}
+              >
+                Edit Schedule
+              </Button>
               <Button onClick={() => setSelectedSchedule(null)}>Close</Button>
             </ModalFooter>
           </ModalContent>
         </Modal>
       )}
+
+      {/* Edit Schedule Modal */}
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            Edit Payment Schedule - {editSchedule?.studentId?.firstName} {editSchedule?.studentId?.lastName}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <form onSubmit={handleEditSubmit(onEditSubmit)}>
+              <VStack spacing={4} align="stretch">
+                <SimpleGrid columns={2} spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel>Total Amount (₹)</FormLabel>
+                    <Input type="number" {...registerEdit('totalAmount')} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Advance Payment (₹)</FormLabel>
+                    <Input type="number" {...registerEdit('advancePayment')} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Paid on Admission (₹)</FormLabel>
+                    <Input type="number" {...registerEdit('paidOnAdmission')} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Notes</FormLabel>
+                    <Input {...registerEdit('notes')} />
+                  </FormControl>
+                </SimpleGrid>
+
+                <Heading size="sm" mt={4}>Installments (Edit Amounts & Due Dates)</Heading>
+                <Box maxH="300px" overflowY="auto">
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>#</Th>
+                        <Th>Amount (₹)</Th>
+                        <Th>Due Date</Th>
+                        <Th>Status</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {editInstallments.map((inst, idx) => (
+                        <Tr key={inst.installmentNumber}>
+                          <Td>{inst.installmentNumber}</Td>
+                          <Td>
+                            <Input
+                              size="sm"
+                              type="number"
+                              value={inst.amount}
+                              onChange={(e) => updateInstallment(idx, 'amount', e.target.value)}
+                              isDisabled={inst.status === 'paid'}
+                            />
+                          </Td>
+                          <Td>
+                            <Input
+                              size="sm"
+                              type="date"
+                              value={new Date(inst.dueDate).toISOString().split('T')[0]}
+                              onChange={(e) => updateInstallment(idx, 'dueDate', e.target.value)}
+                              isDisabled={inst.status === 'paid'}
+                            />
+                          </Td>
+                          <Td>
+                            <Badge colorScheme={statusColors[inst.status]} size="sm">
+                              {inst.status}
+                            </Badge>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+
+                <Button type="submit" colorScheme="brand" isLoading={updateMutation.isPending}>
+                  Save Changes
+                </Button>
+              </VStack>
+            </form>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
       {/* Create Schedule Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">

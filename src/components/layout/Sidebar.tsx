@@ -34,11 +34,11 @@ export const Sidebar = () => {
       position="fixed"
       left={0}
       top={0}
-      py={4}
+      py={2}
     >
       <Flex px={6} py={4} align="center">
         <Text fontSize="xl" fontWeight="bold" color="brand.500">
-          Tia's Kids
+          Good Day
         </Text>
       </Flex>
       <Divider />

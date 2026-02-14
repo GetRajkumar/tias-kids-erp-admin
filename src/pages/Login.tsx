@@ -61,7 +61,7 @@ export const Login = () => {
         <Box bg="white" p={8} borderRadius="lg" boxShadow="md">
           <VStack spacing={6}>
             <Heading size="lg" color="brand.500">
-              Tia's Kids ERP
+              Good day ERP
             </Heading>
             <Text color="gray.600">Sign in to admin portal</Text>
 

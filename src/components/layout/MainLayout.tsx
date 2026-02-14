@@ -12,11 +12,11 @@ export const MainLayout = () => {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" mt={12}>
+    <Box minH="100vh" bg="gray.50">
       <Sidebar />
       <Header />
-      <Box ml="250px" pt="80px" p={6} style={{paddingTop: "6rem"}}>
-        <Outlet />
+      <Box ml="250px" p={"90px 20px 20px 20px"}>
+        <Outlet/>
       </Box>
     </Box>
   );
