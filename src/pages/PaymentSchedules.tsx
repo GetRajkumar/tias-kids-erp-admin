@@ -63,6 +63,8 @@ interface PaymentSchedule {
   academicYear: string;
   planType: string;
   totalAmount: number;
+  advancePayment: number;
+  paidOnAdmission: number;
   totalPaid: number;
   totalDue: number;
   installments: Installment[];
@@ -174,6 +176,8 @@ export const PaymentSchedules = () => {
       ...data,
       parentId,
       totalAmount: Number(data.totalAmount),
+      advancePayment: Number(data.advancePayment) || 0,
+      paidOnAdmission: Number(data.paidOnAdmission) || 0,
     });
   };
 
@@ -383,11 +387,13 @@ export const PaymentSchedules = () => {
                   colorScheme="green"
                   borderRadius="full"
                 />
-                <HStack justify="space-between">
-                  <Text>Paid: ₹{selectedSchedule.totalPaid.toLocaleString()}</Text>
-                  <Text>Due: ₹{selectedSchedule.totalDue.toLocaleString()}</Text>
-                  <Text>Total: ₹{selectedSchedule.totalAmount.toLocaleString()}</Text>
-                </HStack>
+                <SimpleGrid columns={2} spacing={2}>
+                  <Text>Total Amount: <strong>₹{selectedSchedule.totalAmount.toLocaleString()}</strong></Text>
+                  <Text>Advance Payment: <strong>₹{(selectedSchedule.advancePayment || 0).toLocaleString()}</strong></Text>
+                  <Text>Paid on Admission: <strong>₹{(selectedSchedule.paidOnAdmission || 0).toLocaleString()}</strong></Text>
+                  <Text>Total Paid: <strong>₹{selectedSchedule.totalPaid.toLocaleString()}</strong></Text>
+                  <Text color="orange.500">Due: <strong>₹{selectedSchedule.totalDue.toLocaleString()}</strong></Text>
+                </SimpleGrid>
 
                 <Heading size="sm" mt={4}>Installments</Heading>
                 <Table size="sm">
@@ -477,6 +483,16 @@ export const PaymentSchedules = () => {
                   <FormLabel>Total Amount (₹)</FormLabel>
                   <Input type="number" {...register('totalAmount')} placeholder="50000" />
                 </FormControl>
+                <SimpleGrid columns={2} spacing={4} w="100%">
+                  <FormControl>
+                    <FormLabel>Advance Payment (₹)</FormLabel>
+                    <Input type="number" {...register('advancePayment')} placeholder="0" defaultValue={0} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Paid on Admission (₹)</FormLabel>
+                    <Input type="number" {...register('paidOnAdmission')} placeholder="0" defaultValue={0} />
+                  </FormControl>
+                </SimpleGrid>
                 <FormControl>
                   <FormLabel>Notes</FormLabel>
                   <Input {...register('notes')} placeholder="Optional notes" />

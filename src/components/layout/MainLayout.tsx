@@ -12,10 +12,10 @@ export const MainLayout = () => {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg="gray.50" mt={12}>
       <Sidebar />
       <Header />
-      <Box ml="250px" pt="80px" p={6}>
+      <Box ml="250px" pt="80px" p={6} style={{paddingTop: "6rem"}}>
         <Outlet />
       </Box>
     </Box>

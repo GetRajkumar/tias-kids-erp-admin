@@ -41,6 +41,7 @@ const admissionSchema = z.object({
     zipCode: z.string().min(1, 'ZIP code is required'),
   }),
   preferredClass: z.string().min(1, 'Please select a class'),
+  academicYear: z.string().min(1, 'Please select academic year'),
 });
 
 type AdmissionForm = z.infer<typeof admissionSchema>;
@@ -178,6 +179,16 @@ export const AdmissionEnquiry = () => {
                         </Select>
                         {errors.preferredClass && (
                           <Text color="red.500" fontSize="sm">{errors.preferredClass.message}</Text>
+                        )}
+                      </FormControl>
+                      <FormControl isInvalid={!!errors.academicYear} isRequired>
+                        <FormLabel>Academic Year</FormLabel>
+                        <Select {...register('academicYear')} placeholder="Select academic year">
+                          <option value="2025-26">2025-26</option>
+                          <option value="2026-27">2026-27</option>
+                        </Select>
+                        {errors.academicYear && (
+                          <Text color="red.500" fontSize="sm">{errors.academicYear.message}</Text>
                         )}
                       </FormControl>
                     </SimpleGrid>

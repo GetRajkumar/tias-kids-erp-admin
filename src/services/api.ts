@@ -62,6 +62,7 @@ export const paymentSchedulesApi = {
   getAll: (academicYear?: string) => api.get('/payment-schedules', { params: { academicYear } }),
   getById: (id: string) => api.get(`/payment-schedules/${id}`),
   create: (data: any) => api.post('/payment-schedules', data),
+  update: (id: string, data: any) => api.patch(`/payment-schedules/${id}`, data),
   getByStudent: (studentId: string) => api.get(`/payment-schedules/student/${studentId}`),
   getStudentSummary: (studentId: string) => api.get(`/payment-schedules/student/${studentId}/summary`),
   getByParent: (parentId: string) => api.get(`/payment-schedules/parent/${parentId}`),
