@@ -12,6 +12,7 @@ import { Admissions } from './pages/Admissions';
 import { Attendance } from './pages/Attendance';
 import { Payments } from './pages/Payments';
 import { Tickets } from './pages/Tickets';
+import { AdmissionEnquiry } from './pages/AdmissionEnquiry';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/admission-enquiry" element={<AdmissionEnquiry />} />
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/students" element={<Students />} />

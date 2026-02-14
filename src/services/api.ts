@@ -40,6 +40,7 @@ export const studentsApi = {
 export const admissionsApi = {
   getAll: (status?: string) => api.get('/admissions', { params: { status } }),
   getById: (id: string) => api.get(`/admissions/${id}`),
+  create: (data: any) => api.post('/admissions', data),
   approve: (id: string) => api.post(`/admissions/${id}/approve`),
   reject: (id: string, reason: string) => api.post(`/admissions/${id}/reject`, { reason }),
 };
