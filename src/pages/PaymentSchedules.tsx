@@ -114,6 +114,7 @@ export const PaymentSchedules = () => {
     queryKey: ['students'],
     queryFn: async () => {
       const res = await studentsApi.getAll();
+      console.log('Students loaded:', res.data);
       return res.data;
     },
   });
@@ -126,8 +127,13 @@ export const PaymentSchedules = () => {
       onClose();
       reset();
     },
-    onError: () => {
-      toast({ title: 'Failed to create schedule', status: 'error' });
+    onError: (error: any) => {
+      console.error('Create schedule error:', error);
+      toast({ 
+        title: 'Failed to create schedule', 
+        description: error?.response?.data?.message || error.message,
+        status: 'error' 
+      });
     },
   });
 
@@ -147,9 +153,24 @@ export const PaymentSchedules = () => {
 
   const onCreateSubmit = (data: any) => {
     const student = students?.find((s: any) => s._id === data.studentId);
+    
+    if (!student) {
+      toast({ title: 'Please select a student', status: 'warning' });
+      return;
+    }
+    
+    const parentId = student?.parentId?._id || student?.parentId;
+    
+    if (!parentId) {
+      toast({ title: 'Student has no parent linked', status: 'error' });
+      return;
+    }
+    
+    console.log('Creating schedule with:', { studentId: data.studentId, parentId, student });
+    
     createMutation.mutate({
       ...data,
-      parentId: student?.parentId?._id || student?.parentId,
+      parentId,
       totalAmount: Number(data.totalAmount),
     });
   };
