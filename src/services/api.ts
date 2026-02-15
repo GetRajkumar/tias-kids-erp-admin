@@ -37,6 +37,11 @@ export const studentsApi = {
   delete: (id: string) => api.delete(`/students/${id}`),
 };
 
+export const usersApi = {
+  getById: (id: string) => api.get(`/users/${id}`),
+  update: (id: string, data: any) => api.patch(`/users/${id}`, data),
+};
+
 export const admissionsApi = {
   getAll: (status?: string) => api.get('/admissions', { params: { status } }),
   getById: (id: string) => api.get(`/admissions/${id}`),

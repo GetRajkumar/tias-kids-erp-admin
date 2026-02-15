@@ -10,6 +10,26 @@ export interface User {
   createdAt: string;
 }
 
+export interface MedicalInfo {
+  allergies?: string[];
+  medications?: string[];
+  specialNeeds?: string;
+  medicalConditions?: string[];
+}
+
+export interface EmergencyContact {
+  name?: string;
+  relation?: string;
+  phone?: string;
+}
+
+export interface Address {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}
+
 export interface Student {
   _id: string;
   studentId: string;
@@ -22,6 +42,10 @@ export interface Student {
   class?: string;
   section?: string;
   status: string;
+  address?: Address;
+  emergencyContact?: EmergencyContact;
+  medicalInfo?: MedicalInfo;
+  profileImage?: string;
   createdAt: string;
 }
 

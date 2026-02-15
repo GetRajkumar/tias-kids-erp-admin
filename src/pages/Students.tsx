@@ -24,21 +24,22 @@ import {
   ModalBody,
   ModalCloseButton,
   VStack,
-  FormControl,
-  FormLabel,
-  Select,
   useToast,
+  Text,
 } from '@chakra-ui/react';
-import { FiSearch, FiPlus } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiEdit2, FiEye } from 'react-icons/fi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { studentsApi } from '../services/api';
 import { Student } from '../types';
+import { StudentForm } from '../components/students/StudentForm';
+import { StudentDetailModal } from '../components/students/StudentDetailModal';
 
 export const Students = () => {
   const [search, setSearch] = useState('');
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const [selectedStudentId, setSelectedStudentId] = useState<string | undefined>();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -50,18 +51,19 @@ export const Students = () => {
     },
   });
 
-  const { register, handleSubmit, reset } = useForm();
-
   const createMutation = useMutation({
     mutationFn: (data: any) => studentsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast({ title: 'Student created', status: 'success' });
+      toast({ title: 'Student created successfully', status: 'success' });
       onClose();
-      reset();
     },
-    onError: () => {
-      toast({ title: 'Failed to create student', status: 'error' });
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to create student',
+        description: error.response?.data?.message || 'Unknown error',
+        status: 'error',
+      });
     },
   });
 
@@ -71,6 +73,11 @@ export const Students = () => {
       s.lastName.toLowerCase().includes(search.toLowerCase()) ||
       s.studentId.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleViewStudent = (id: string) => {
+    setSelectedStudentId(id);
+    onDetailOpen();
+  };
 
   const onSubmit = (data: any) => createMutation.mutate(data);
 
@@ -86,7 +93,7 @@ export const Students = () => {
     <Box>
       <HStack justify="space-between" mb={6}>
         <Heading size="lg">Students</Heading>
-        <Button leftIcon={<FiPlus />} onClick={onOpen}>
+        <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
           Add Student
         </Button>
       </HStack>
@@ -104,95 +111,92 @@ export const Students = () => {
         </InputGroup>
 
         <Table variant="simple">
-          <Thead>
+          <Thead bg="gray.50">
             <Tr>
               <Th>Student</Th>
               <Th>Student ID</Th>
               <Th>Class</Th>
               <Th>Gender</Th>
+              <Th>Blood Group</Th>
               <Th>Status</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
-            {filteredStudents?.map((student) => (
-              <Tr key={student._id}>
-                <Td>
-                  <HStack>
-                    <Avatar size="sm" name={`${student.firstName} ${student.lastName}`} />
-                    <Box>
-                      {student.firstName} {student.lastName}
-                    </Box>
-                  </HStack>
-                </Td>
-                <Td>{student.studentId}</Td>
-                <Td>{student.class || '-'}</Td>
-                <Td>{student.gender || '-'}</Td>
-                <Td>
-                  <Badge colorScheme={student.status === 'active' ? 'green' : 'gray'}>
-                    {student.status}
-                  </Badge>
-                </Td>
-                <Td>
-                  <Button size="sm" variant="ghost">
-                    View
-                  </Button>
+            {filteredStudents && filteredStudents.length > 0 ? (
+              filteredStudents.map((student) => (
+                <Tr key={student._id} _hover={{ bg: 'gray.50' }}>
+                  <Td>
+                    <HStack>
+                      <Avatar size="sm" name={`${student.firstName} ${student.lastName}`} />
+                      <Box>
+                        <Text fontWeight="medium">{student.firstName} {student.lastName}</Text>
+                        <Text fontSize="sm" color="gray.500">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '-'}</Text>
+                      </Box>
+                    </HStack>
+                  </Td>
+                  <Td>{student.studentId}</Td>
+                  <Td>{student.class || '-'}</Td>
+                  <Td>{student.gender || '-'}</Td>
+                  <Td>
+                    {student.bloodGroup ? (
+                      <Badge colorScheme="red">{student.bloodGroup}</Badge>
+                    ) : (
+                      <Text color="gray.400">-</Text>
+                    )}
+                  </Td>
+                  <Td>
+                    <Badge colorScheme={student.status === 'active' ? 'green' : 'gray'}>
+                      {student.status}
+                    </Badge>
+                  </Td>
+                  <Td>
+                    <HStack spacing={2}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        colorScheme="blue"
+                        leftIcon={<FiEye />}
+                        onClick={() => handleViewStudent(student._id)}
+                      >
+                        View
+                      </Button>
+                    </HStack>
+                  </Td>
+                </Tr>
+              ))
+            ) : (
+              <Tr>
+                <Td colSpan={7} textAlign="center" py={8}>
+                  <Text color="gray.500">No students found</Text>
                 </Td>
               </Tr>
-            ))}
+            )}
           </Tbody>
         </Table>
       </Box>
 
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      {/* Create Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="2xl">
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent maxH="90vh" overflowY="auto">
           <ModalHeader>Add New Student</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <VStack spacing={4}>
-                <HStack w="100%">
-                  <FormControl isRequired>
-                    <FormLabel>First Name</FormLabel>
-                    <Input {...register('firstName')} />
-                  </FormControl>
-                  <FormControl isRequired>
-                    <FormLabel>Last Name</FormLabel>
-                    <Input {...register('lastName')} />
-                  </FormControl>
-                </HStack>
-                <FormControl isRequired>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <Input type="date" {...register('dateOfBirth')} />
-                </FormControl>
-                <HStack w="100%">
-                  <FormControl>
-                    <FormLabel>Gender</FormLabel>
-                    <Select {...register('gender')}>
-                      <option value="">Select</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </Select>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Class</FormLabel>
-                    <Select {...register('class')}>
-                      <option value="">Select</option>
-                      <option value="Nursery">Nursery</option>
-                      <option value="LKG">LKG</option>
-                      <option value="UKG">UKG</option>
-                    </Select>
-                  </FormControl>
-                </HStack>
-                <Button type="submit" w="100%" isLoading={createMutation.isPending}>
-                  Create Student
-                </Button>
-              </VStack>
-            </form>
+            <StudentForm
+              onSubmit={onSubmit}
+              isLoading={createMutation.isPending}
+            />
           </ModalBody>
         </ModalContent>
       </Modal>
+
+      {/* Detail/Edit Modal */}
+      <StudentDetailModal
+        isOpen={isDetailOpen}
+        onClose={onDetailClose}
+        studentId={selectedStudentId}
+      />
     </Box>
   );
 };

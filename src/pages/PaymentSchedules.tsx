@@ -42,8 +42,9 @@ import {
   StatHelpText,
 } from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { Select as SearchableSelect } from 'chakra-react-select';
 import { paymentSchedulesApi, studentsApi } from '../services/api';
 
 interface Installment {
@@ -97,9 +98,21 @@ export const PaymentSchedules = () => {
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, watch, setValue, control } = useForm();
   const { register: registerPay, handleSubmit: handlePaySubmit, reset: resetPay } = useForm();
   const { register: registerEdit, handleSubmit: handleEditSubmit, reset: resetEdit, setValue: setEditValue } = useForm();
+
+  const selectedStudentId = watch('studentId');
+
+  const getAcademicYear = (date: string | Date): string => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    if (month >= 3) {
+      return `${year}-${(year + 1).toString().slice(-2)}`;
+    }
+    return `${year - 1}-${year.toString().slice(-2)}`;
+  };
 
   const { data: schedules, isLoading } = useQuery<PaymentSchedule[]>({
     queryKey: ['payment-schedules'],
@@ -127,6 +140,15 @@ export const PaymentSchedules = () => {
   });
 
   console.log('Students state:', { students, studentsLoading, studentsError });
+
+  useEffect(() => {
+    if (selectedStudentId && students) {
+      const student = students.find((s: any) => s._id === selectedStudentId);
+      if (student?.admissionDate) {
+        setValue('academicYear', getAcademicYear(student.admissionDate));
+      }
+    }
+  }, [selectedStudentId, students, setValue]);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => paymentSchedulesApi.create(data),
@@ -609,24 +631,34 @@ export const PaymentSchedules = () => {
               <VStack spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>Student {studentsLoading && '(Loading...)'}</FormLabel>
-                  <Select {...register('studentId')} placeholder="Select student">
-                    {students && students.length > 0 ? (
-                      students.map((s: any) => (
-                        <option key={s._id} value={s._id}>
-                          {s.firstName} {s.lastName} ({s.studentId}) - {s.class || 'No Class'}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No students available</option>
+                  <Controller
+                    name="studentId"
+                    control={control}
+                    rules={{ required: 'Student is required' }}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        {...field}
+                        placeholder="Search and select student..."
+                        isLoading={studentsLoading}
+                        options={students?.map((s: any) => ({
+                          value: s._id,
+                          label: `${s.firstName} ${s.lastName} (${s.studentId}) - ${s.class || 'No Class'}`,
+                        })) || []}
+                        onChange={(option: any) => field.onChange(option?.value)}
+                        value={students?.map((s: any) => ({
+                          value: s._id,
+                          label: `${s.firstName} ${s.lastName} (${s.studentId}) - ${s.class || 'No Class'}`,
+                        })).find((opt: any) => opt.value === field.value)}
+                      />
                     )}
-                  </Select>
+                  />
                   {students?.length === 0 && (
                     <Text fontSize="sm" color="red.500">No students found. Approve an admission first.</Text>
                   )}
                 </FormControl>
                 <FormControl isRequired>
                   <FormLabel>Academic Year</FormLabel>
-                  <Input {...register('academicYear')} placeholder="2024-25" />
+                  <Input {...register('academicYear')} placeholder="Select student first" isReadOnly bg="gray.100" />
                 </FormControl>
                 <FormControl isRequired>
                   <FormLabel>Payment Plan</FormLabel>
@@ -643,11 +675,57 @@ export const PaymentSchedules = () => {
                 <SimpleGrid columns={2} spacing={4} w="100%">
                   <FormControl>
                     <FormLabel>Advance Payment (₹)</FormLabel>
-                    <Input type="number" {...register('advancePayment')} placeholder="0" defaultValue={0} />
+                    <HStack>
+                      <Input type="number" {...register('advancePayment')} placeholder="0" defaultValue={0} />
+                      <Button
+                        colorScheme="blue"
+                        size="sm"
+                        minW="80px"
+                        onClick={() => {
+                          const amount = watch('advancePayment');
+                          if (!amount || amount <= 0) {
+                            toast({ title: 'Enter advance payment amount first', status: 'warning' });
+                            return;
+                          }
+                          // TODO: Integrate payment gateway here
+                          toast({ 
+                            title: 'Payment Gateway', 
+                            description: `Ready to process ₹${amount} advance payment. Gateway integration pending.`,
+                            status: 'info',
+                            duration: 5000,
+                          });
+                        }}
+                      >
+                        Pay Now
+                      </Button>
+                    </HStack>
                   </FormControl>
                   <FormControl>
                     <FormLabel>Paid on Admission (₹)</FormLabel>
-                    <Input type="number" {...register('paidOnAdmission')} placeholder="0" defaultValue={0} />
+                    <HStack>
+                      <Input type="number" {...register('paidOnAdmission')} placeholder="0" defaultValue={0} />
+                      <Button
+                        colorScheme="blue"
+                        size="sm"
+                        minW="80px"
+                        onClick={() => {
+                          const amount = watch('paidOnAdmission');
+                          if (!amount || amount <= 0) {
+                            toast({ title: 'Enter paid on admission amount first', status: 'warning' });
+                            return;
+                          }
+                          // TODO: Integrate payment gateway here
+                          toast({ 
+                            title: 'Payment Gateway', 
+                            description: `Ready to process ₹${amount} admission payment. Gateway integration pending.`,
+                            status: 'info',
+                            duration: 5000,
+                          });
+                        }}
+                      >
+                        Pay Now
+                      </Button>
+                    </HStack>
                   </FormControl>
                 </SimpleGrid>
                 <FormControl>
