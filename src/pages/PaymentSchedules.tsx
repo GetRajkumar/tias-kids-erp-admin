@@ -95,12 +95,15 @@ export const PaymentSchedules = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isPayOpen, onOpen: onPayOpen, onClose: onPayClose } = useDisclosure();
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
+  const { isOpen: isAdvanceOpen, onOpen: onAdvanceOpen, onClose: onAdvanceClose } = useDisclosure();
+  const [advancePayments, setAdvancePayments] = useState<Record<string, { advance: number; admission: number }>>({});
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const { register, handleSubmit, reset, watch, setValue, control } = useForm();
   const { register: registerPay, handleSubmit: handlePaySubmit, reset: resetPay } = useForm();
   const { register: registerEdit, handleSubmit: handleEditSubmit, reset: resetEdit, setValue: setEditValue } = useForm();
+  const { register: registerAdvance, handleSubmit: handleAdvanceSubmit, reset: resetAdvance, watch: watchAdvance, control: controlAdvance } = useForm();
 
   const selectedStudentId = watch('studentId');
 
@@ -217,12 +220,14 @@ export const PaymentSchedules = () => {
     
     console.log('Creating schedule with:', { studentId: data.studentId, parentId, student });
     
+    const studentAdvance = advancePayments[data.studentId] || { advance: 0, admission: 0 };
+    
     createMutation.mutate({
       ...data,
       parentId,
       totalAmount: Number(data.totalAmount),
-      advancePayment: Number(data.advancePayment) || 0,
-      paidOnAdmission: Number(data.paidOnAdmission) || 0,
+      advancePayment: studentAdvance.advance,
+      paidOnAdmission: studentAdvance.admission,
     });
   };
 
@@ -300,9 +305,14 @@ export const PaymentSchedules = () => {
     <Box>
       <HStack justify="space-between" mb={6}>
         <Heading size="lg">Payment Schedules</Heading>
-        <Button colorScheme="brand" onClick={onOpen}>
-          Create Schedule
-        </Button>
+        <HStack>
+          <Button colorScheme="blue" onClick={onAdvanceOpen}>
+            Advance Payment
+          </Button>
+          <Button colorScheme="brand" onClick={onOpen}>
+            Create Schedule
+          </Button>
+        </HStack>
       </HStack>
 
       {/* Summary Cards */}
@@ -672,62 +682,16 @@ export const PaymentSchedules = () => {
                   <FormLabel>Total Amount (₹)</FormLabel>
                   <Input type="number" {...register('totalAmount')} placeholder="50000" />
                 </FormControl>
-                <SimpleGrid columns={2} spacing={4} w="100%">
-                  <FormControl>
-                    <FormLabel>Advance Payment (₹)</FormLabel>
-                    <HStack>
-                      <Input type="number" {...register('advancePayment')} placeholder="0" defaultValue={0} />
-                      <Button
-                        colorScheme="blue"
-                        size="sm"
-                        minW="80px"
-                        onClick={() => {
-                          const amount = watch('advancePayment');
-                          if (!amount || amount <= 0) {
-                            toast({ title: 'Enter advance payment amount first', status: 'warning' });
-                            return;
-                          }
-                          // TODO: Integrate payment gateway here
-                          toast({ 
-                            title: 'Payment Gateway', 
-                            description: `Ready to process ₹${amount} advance payment. Gateway integration pending.`,
-                            status: 'info',
-                            duration: 5000,
-                          });
-                        }}
-                      >
-                        Pay Now
-                      </Button>
+                {selectedStudentId && advancePayments[selectedStudentId] && (
+                  <Box p={3} bg="green.50" borderRadius="md" border="1px" borderColor="green.200">
+                    <Text fontWeight="medium" color="green.700">Pre-collected Payments for this Student:</Text>
+                    <HStack mt={2} spacing={6}>
+                      <Text>Advance: <strong>₹{advancePayments[selectedStudentId]?.advance?.toLocaleString() || 0}</strong></Text>
+                      <Text>Admission Fee: <strong>₹{advancePayments[selectedStudentId]?.admission?.toLocaleString() || 0}</strong></Text>
                     </HStack>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Paid on Admission (₹)</FormLabel>
-                    <HStack>
-                      <Input type="number" {...register('paidOnAdmission')} placeholder="0" defaultValue={0} />
-                      <Button
-                        colorScheme="blue"
-                        size="sm"
-                        minW="80px"
-                        onClick={() => {
-                          const amount = watch('paidOnAdmission');
-                          if (!amount || amount <= 0) {
-                            toast({ title: 'Enter paid on admission amount first', status: 'warning' });
-                            return;
-                          }
-                          // TODO: Integrate payment gateway here
-                          toast({ 
-                            title: 'Payment Gateway', 
-                            description: `Ready to process ₹${amount} admission payment. Gateway integration pending.`,
-                            status: 'info',
-                            duration: 5000,
-                          });
-                        }}
-                      >
-                        Pay Now
-                      </Button>
-                    </HStack>
-                  </FormControl>
-                </SimpleGrid>
+                    <Text fontSize="sm" color="gray.600" mt={1}>These amounts will be deducted from the schedule.</Text>
+                  </Box>
+                )}
                 <FormControl>
                   <FormLabel>Notes</FormLabel>
                   <Input {...register('notes')} placeholder="Optional notes" />
@@ -782,6 +746,101 @@ export const PaymentSchedules = () => {
                 </FormControl>
                 <Button type="submit" colorScheme="green" w="100%" isLoading={recordPaymentMutation.isPending}>
                   Record Payment
+                </Button>
+              </VStack>
+            </form>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Advance Payment Modal */}
+      <Modal isOpen={isAdvanceOpen} onClose={onAdvanceClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Collect Advance / Admission Fee</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <form onSubmit={handleAdvanceSubmit((data: any) => {
+              if (!data.studentId) {
+                toast({ title: 'Please select a student', status: 'warning' });
+                return;
+              }
+              const totalAmount = (Number(data.advanceAmount) || 0) + (Number(data.admissionAmount) || 0);
+              if (totalAmount <= 0) {
+                toast({ title: 'Enter at least one payment amount', status: 'warning' });
+                return;
+              }
+              // TODO: Integrate payment gateway here
+              toast({ 
+                title: 'Payment Gateway', 
+                description: `Ready to process ₹${totalAmount.toLocaleString()}. Gateway integration pending.`,
+                status: 'info',
+                duration: 5000,
+              });
+              // Store the advance payment locally for use when creating schedule
+              setAdvancePayments(prev => ({
+                ...prev,
+                [data.studentId]: {
+                  advance: Number(data.advanceAmount) || 0,
+                  admission: Number(data.admissionAmount) || 0,
+                }
+              }));
+              toast({ title: 'Advance payment recorded', description: 'This will be applied when creating the fee schedule.', status: 'success' });
+              onAdvanceClose();
+              resetAdvance();
+            })}>
+              <VStack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel>Student</FormLabel>
+                  <Controller
+                    name="studentId"
+                    control={controlAdvance}
+                    rules={{ required: 'Student is required' }}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        {...field}
+                        placeholder="Search and select student..."
+                        isLoading={studentsLoading}
+                        options={students?.map((s: any) => ({
+                          value: s._id,
+                          label: `${s.firstName} ${s.lastName} (${s.studentId}) - ${s.class || 'No Class'}`,
+                        })) || []}
+                        onChange={(option: any) => field.onChange(option?.value)}
+                        value={students?.map((s: any) => ({
+                          value: s._id,
+                          label: `${s.firstName} ${s.lastName} (${s.studentId}) - ${s.class || 'No Class'}`,
+                        })).find((opt: any) => opt.value === field.value)}
+                      />
+                    )}
+                  />
+                </FormControl>
+                <SimpleGrid columns={2} spacing={4} w="100%">
+                  <FormControl>
+                    <FormLabel>Advance Payment (₹)</FormLabel>
+                    <Input type="number" {...registerAdvance('advanceAmount')} placeholder="0" />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Admission Fee (₹)</FormLabel>
+                    <Input type="number" {...registerAdvance('admissionAmount')} placeholder="0" />
+                  </FormControl>
+                </SimpleGrid>
+                <FormControl>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select {...registerAdvance('paymentMethod')} placeholder="Select method">
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="cheque">Cheque</option>
+                  </Select>
+                </FormControl>
+                <Box w="100%" p={3} bg="blue.50" borderRadius="md">
+                  <Text fontSize="sm" color="blue.700">
+                    Total: <strong>₹{((Number(watchAdvance('advanceAmount')) || 0) + (Number(watchAdvance('admissionAmount')) || 0)).toLocaleString()}</strong>
+                  </Text>
+                </Box>
+                <Button type="submit" colorScheme="blue" w="100%">
+                  Pay Now
                 </Button>
               </VStack>
             </form>

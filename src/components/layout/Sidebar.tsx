@@ -9,6 +9,8 @@ import {
   FiCreditCard,
   FiMessageSquare,
   FiSettings,
+  FiBell,
+  FiBook,
 } from 'react-icons/fi';
 
 const menuItems = [
@@ -16,9 +18,11 @@ const menuItems = [
   { icon: FiUsers, label: 'Students', path: '/students' },
   { icon: FiUserPlus, label: 'Admissions', path: '/admissions' },
   { icon: FiCalendar, label: 'Attendance', path: '/attendance' },
+  { icon: FiBook, label: 'Homework', path: '/homework' },
   { icon: FiCreditCard, label: 'Fee Schedules', path: '/payment-schedules' },
   { icon: FiDollarSign, label: 'Payments', path: '/payments' },
   { icon: FiMessageSquare, label: 'Tickets', path: '/tickets' },
+  { icon: FiBell, label: 'Announcements', path: '/announcements' },
 ];
 
 export const Sidebar = () => {

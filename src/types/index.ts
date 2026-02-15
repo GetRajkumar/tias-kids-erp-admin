@@ -108,3 +108,42 @@ export interface LoginCredentials {
   email: string;
   password: string;
 }
+
+export interface Announcement {
+  _id: string;
+  title: string;
+  content: string;
+  type: string;
+  targetAudience: string;
+  targetClass?: string;
+  isActive: boolean;
+  publishDate: string;
+  expiryDate?: string;
+  createdBy: { firstName: string; lastName: string };
+  createdAt: string;
+}
+
+export interface HomeworkSubmission {
+  studentId: Student | string;
+  submittedAt: string;
+  content: string;
+  attachments: string[];
+  grade?: string;
+  feedback?: string;
+  gradedBy?: User | string;
+  gradedAt?: string;
+}
+
+export interface Homework {
+  _id: string;
+  title: string;
+  description: string;
+  subject: string;
+  targetClass: string;
+  dueDate: string;
+  attachments: string[];
+  createdBy: User | string;
+  submissions: HomeworkSubmission[];
+  isActive: boolean;
+  createdAt: string;
+}

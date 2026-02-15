@@ -14,6 +14,8 @@ import { Payments } from './pages/Payments';
 import { Tickets } from './pages/Tickets';
 import { AdmissionEnquiry } from './pages/AdmissionEnquiry';
 import { PaymentSchedules } from './pages/PaymentSchedules';
+import { Announcements } from './pages/Announcements';
+import Homework from './pages/Homework';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +43,8 @@ function App() {
                 <Route path="/payments" element={<Payments />} />
                 <Route path="/payment-schedules" element={<PaymentSchedules />} />
                 <Route path="/tickets" element={<Tickets />} />
+                <Route path="/homework" element={<Homework />} />
+                <Route path="/announcements" element={<Announcements />} />
               </Route>
             </Routes>
           </BrowserRouter>

@@ -86,3 +86,20 @@ export const reportsApi = {
   getDashboard: () => api.get('/reports/dashboard'),
   getStudentsByClass: () => api.get('/reports/students-by-class'),
 };
+
+export const homeworkApi = {
+  getByClass: (className: string, params?: any) => api.get(`/homework/class/${className}`, { params }),
+  getById: (id: string) => api.get(`/homework/${id}`),
+  create: (data: any) => api.post('/homework', data),
+  update: (id: string, data: any) => api.patch(`/homework/${id}`, data),
+  delete: (id: string) => api.delete(`/homework/${id}`),
+  grade: (id: string, studentId: string, data: any) => api.post(`/homework/${id}/grade/${studentId}`, data),
+};
+
+export const announcementsApi = {
+  getAll: () => api.get('/announcements'),
+  getById: (id: string) => api.get(`/announcements/${id}`),
+  create: (data: any) => api.post('/announcements', data),
+  update: (id: string, data: any) => api.put(`/announcements/${id}`, data),
+  delete: (id: string) => api.delete(`/announcements/${id}`),
+};
