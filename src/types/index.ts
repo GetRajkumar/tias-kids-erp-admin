@@ -49,6 +49,18 @@ export interface Student {
   createdAt: string;
 }
 
+export interface AdmissionComment {
+  status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  comment: string;
+  commentedBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  commentedAt: string;
+}
+
 export interface Admission {
   _id: string;
   childFirstName: string;
@@ -60,7 +72,10 @@ export interface Admission {
   parentPhone: string;
   preferredClass?: string;
   status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  studentId?: string;
+  comments?: AdmissionComment[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Attendance {

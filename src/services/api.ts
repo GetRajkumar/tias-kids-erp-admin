@@ -48,6 +48,10 @@ export const admissionsApi = {
   create: (data: any) => api.post('/admissions', data),
   approve: (id: string) => api.post(`/admissions/${id}/approve`),
   reject: (id: string, reason: string) => api.post(`/admissions/${id}/reject`, { reason }),
+  updateStatus: (id: string, status: string, comment: string) =>
+    api.post(`/admissions/${id}/update-status`, { status, comment }),
+  getComments: (id: string) => api.get(`/admissions/${id}/comments`),
+  addComment: (id: string, comment: string) => api.post(`/admissions/${id}/add-comment`, { comment }),
 };
 
 export const attendanceApi = {
