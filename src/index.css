@@ -1,11 +1,257 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@theme {
+  /* Brand Colors */
+  --color-brand-50: #E0E7FF;
+  --color-brand-100: #C7D2FE;
+  --color-brand-200: #A5B4FC;
+  --color-brand-300: #818CF8;
+  --color-brand-400: #6366F1;
+  --color-brand-500: #4F46E5;
+  --color-brand-600: #4338CA;
+  --color-brand-700: #3730A3;
+  --color-brand-800: #312E81;
+  --color-brand-900: #1E1B4B;
 }
 
+:root {
+  --brand-50: #E0E7FF;
+  --brand-100: #C7D2FE;
+  --brand-200: #A5B4FC;
+  --brand-300: #818CF8;
+  --brand-400: #6366F1;
+  --brand-500: #4F46E5;
+  --brand-600: #4338CA;
+  --brand-700: #3730A3;
+  --brand-800: #312E81;
+  --brand-900: #1E1B4B;
+}
+
+
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Sheet overlay */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
+
+/* Radix UI Animations */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Animation utility classes */
+.animate-in {
+  animation-duration: 200ms;
+  animation-fill-mode: both;
+}
+
+.animate-out {
+  animation-duration: 150ms;
+  animation-fill-mode: both;
+}
+
+.fade-in-0 {
+  animation-name: fadeIn;
+}
+
+.fade-out-0 {
+  animation-name: fadeOut;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn;
+}
+
+.zoom-out-95 {
+  animation-name: zoomOut;
+}
+
+.slide-in-from-right {
+  animation-name: slideInFromRight;
+}
+
+.slide-out-to-right {
+  animation-name: slideOutToRight;
+}
+
+.slide-in-from-left {
+  animation-name: slideInFromLeft;
+}
+
+.slide-out-to-left {
+  animation-name: slideOutToLeft;
+}
+
+/* Data state animations for Radix UI */
+[data-state="open"].animate-in {
+  animation-play-state: running;
+}
+
+[data-state="closed"].animate-out {
+  animation-play-state: running;
+}
+
+/* Radix UI Focus Visible */
+[data-radix-focus-guard] {
+  position: fixed !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 1px !important;
+  height: 1px !important;
+}
+
+/* Radix UI Dialog/Sheet improvements */
+[data-radix-dialog-overlay] {
+  backdrop-filter: blur(2px);
+}
+
+/* Smooth transitions for Radix components */
+[data-radix-dialog-content],
+[data-radix-dropdown-menu-content],
+[data-radix-popover-content] {
+  will-change: transform, opacity;
+}
+
+/* Fix for dialog content scroll */
+[data-radix-dialog-content] {
+  max-height: 90vh;
+}
+
+/* Ensure proper stacking context */
+[data-radix-portal] {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+[data-radix-portal] > * {
+  pointer-events: auto;
+}
+
+/* Responsive utilities for better mobile experience */
+@media (max-width: 1024px) {
+  /* Ensure modals are responsive on mobile */
+  [data-radix-dialog-content] {
+    max-width: calc(100vw - 2rem) !important;
+    max-height: calc(100vh - 2rem) !important;
+  }
+}
+
+/* Accessibility improvements */
+*:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* Improve text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Prevent layout shift */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better button transitions */
+button {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }

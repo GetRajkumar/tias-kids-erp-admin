@@ -1,78 +1,40 @@
-import {
-  Box,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Button,
-  HStack,
-  Spinner,
-  Center,
-  Select,
-  useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  Input,
-  FormControl,
-  FormLabel,
-  VStack,
-  Text,
-  Textarea,
-  IconButton,
-} from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FiTrash2, FiEdit2, FiEye } from 'react-icons/fi';
+import { Trash2, Pencil, Eye } from 'lucide-react';
 import { homeworkApi } from '../services/api';
 import { Homework as HomeworkType } from '../types';
+import { useTenant } from '../contexts/TenantContext';
+import { toast } from '../components/ui/toast';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Textarea } from '../components/ui/Textarea';
+import { Badge } from '../components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { Sheet } from '../components/ui/Sheet';
+import { Card } from '../components/ui/Card';
+import { LoadingPage } from '../components/ui/Spinner';
 
 const subjectColors: Record<string, string> = {
   English: 'blue',
   Math: 'purple',
   Science: 'green',
-  Art: 'pink',
+  Art: 'purple',
   Music: 'orange',
   General: 'gray',
   Hindi: 'yellow',
-  EVS: 'teal',
+  EVS: 'green',
 };
 
-const classes = [
-  'Playgroup',
-  'Nursery',
-  'LKG',
-  'UKG',
-  'Class 1',
-  'Class 2',
-  'Class 3',
-  'Class 4',
-  'Class 5',
-];
-
-const subjects = ['English', 'Math', 'Science', 'Art', 'Music', 'General', 'Hindi', 'EVS'];
-
 const Homework = () => {
+  const { classes, subjects } = useTenant();
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [editHomework, setEditHomework] = useState<HomeworkType | null>(null);
   const [viewHomework, setViewHomework] = useState<HomeworkType | null>(null);
   const [gradingStudent, setGradingStudent] = useState<string | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const {
-    isOpen: isViewOpen,
-    onOpen: onViewOpen,
-    onClose: onViewClose,
-  } = useDisclosure();
-  const toast = useToast();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, setValue } = useForm();
   const {
@@ -143,17 +105,17 @@ const Homework = () => {
   const handleClose = () => {
     setEditHomework(null);
     reset();
-    onClose();
+    setSheetOpen(false);
   };
 
   const handleViewClose = () => {
     setViewHomework(null);
     setGradingStudent(null);
     resetGrade();
-    onViewClose();
+    setViewSheetOpen(false);
   };
 
-  const openEditModal = (homework: HomeworkType) => {
+  const openEditSheet = (homework: HomeworkType) => {
     setEditHomework(homework);
     setValue('title', homework.title);
     setValue('description', homework.description);
@@ -161,12 +123,12 @@ const Homework = () => {
     setValue('targetClass', homework.targetClass);
     setValue('dueDate', homework.dueDate.split('T')[0]);
     setValue('isActive', homework.isActive);
-    onOpen();
+    setSheetOpen(true);
   };
 
-  const openViewModal = (homework: HomeworkType) => {
+  const openViewSheet = (homework: HomeworkType) => {
     setViewHomework(homework);
-    onViewOpen();
+    setViewSheetOpen(true);
   };
 
   const onSubmit = (data: any) => {
@@ -201,51 +163,45 @@ const Homework = () => {
   };
 
   if (isLoading && selectedClass) {
-    return (
-      <Center h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Center>
-    );
+    return <LoadingPage />;
   }
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={6}>
-        <Heading size="lg">Homework Management</Heading>
-        <Button colorScheme="brand" onClick={onOpen}>
-          Create Homework
-        </Button>
-      </HStack>
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Homework Management</h1>
+        <Button onClick={() => setSheetOpen(true)}>Create Homework</Button>
+      </div>
 
-      <Box mb={4}>
+      <div className="mb-4">
         <Select
-          placeholder="Filter by class"
+          className="w-full sm:w-[300px]"
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
-          maxW="300px"
         >
+          <option value="">Filter by class</option>
           {classes.map((cls) => (
             <option key={cls} value={cls}>
               {cls}
             </option>
           ))}
         </Select>
-      </Box>
+      </div>
 
       {!selectedClass ? (
-        <Center h="200px">
-          <Text color="gray.500">Select a class to view homework assignments</Text>
-        </Center>
+        <div className="flex h-48 items-center justify-center">
+          <p className="text-gray-500">Select a class to view homework assignments</p>
+        </div>
       ) : (
-        <Box bg="white" borderRadius="lg" shadow="sm" p={4}>
-          <Table variant="simple">
+        <Card padding={false}>
+          <Table>
             <Thead>
               <Tr>
                 <Th>Title</Th>
                 <Th>Subject</Th>
-                <Th>Class</Th>
-                <Th>Due Date</Th>
-                <Th>Submissions</Th>
+                <Th className="hidden md:table-cell">Class</Th>
+                <Th className="hidden sm:table-cell">Due Date</Th>
+                <Th className="hidden lg:table-cell">Submissions</Th>
                 <Th>Status</Th>
                 <Th>Actions</Th>
               </Tr>
@@ -254,256 +210,244 @@ const Homework = () => {
               {homeworkList?.map((homework) => (
                 <Tr key={homework._id}>
                   <Td>
-                    <Text fontWeight="medium">{homework.title}</Text>
-                    <Text fontSize="sm" color="gray.500" noOfLines={1}>
-                      {homework.description}
-                    </Text>
+                    <div>
+                      <span className="font-medium text-gray-900">{homework.title}</span>
+                      <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                        {homework.description}
+                      </p>
+                    </div>
                   </Td>
                   <Td>
-                    <Badge colorScheme={subjectColors[homework.subject] || 'gray'}>
+                    <Badge color={subjectColors[homework.subject] || 'gray'}>
                       {homework.subject}
                     </Badge>
                   </Td>
-                  <Td>{homework.targetClass}</Td>
-                  <Td>{new Date(homework.dueDate).toLocaleDateString()}</Td>
-                  <Td>{homework.submissions?.length || 0}</Td>
+                  <Td className="hidden md:table-cell">{homework.targetClass}</Td>
+                  <Td className="hidden sm:table-cell">
+                    {new Date(homework.dueDate).toLocaleDateString()}
+                  </Td>
+                  <Td className="hidden lg:table-cell">{homework.submissions?.length || 0}</Td>
                   <Td>
-                    <Badge colorScheme={homework.isActive ? 'green' : 'gray'}>
+                    <Badge color={homework.isActive ? 'green' : 'gray'}>
                       {homework.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </Td>
                   <Td>
-                    <HStack>
-                      <IconButton
-                        aria-label="View submissions"
-                        icon={<FiEye />}
-                        size="sm"
-                        onClick={() => openViewModal(homework)}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        icon={<Eye className="h-4 w-4" />}
+                        onClick={() => openViewSheet(homework)}
                       />
-                      <IconButton
-                        aria-label="Edit"
-                        icon={<FiEdit2 />}
-                        size="sm"
-                        onClick={() => openEditModal(homework)}
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        icon={<Pencil className="h-4 w-4" />}
+                        onClick={() => openEditSheet(homework)}
                       />
-                      <IconButton
-                        aria-label="Delete"
-                        icon={<FiTrash2 />}
-                        size="sm"
-                        colorScheme="red"
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        icon={<Trash2 className="h-4 w-4" />}
                         onClick={() => {
                           if (window.confirm('Are you sure you want to delete this homework?')) {
                             deleteMutation.mutate(homework._id);
                           }
                         }}
                       />
-                    </HStack>
+                    </div>
                   </Td>
                 </Tr>
               ))}
               {homeworkList?.length === 0 && (
                 <Tr>
                   <Td colSpan={7}>
-                    <Center py={4}>
-                      <Text color="gray.500">No homework assignments found</Text>
-                    </Center>
+                    <div className="py-8 text-center text-gray-500">
+                      No homework assignments found
+                    </div>
                   </Td>
                 </Tr>
               )}
             </Tbody>
           </Table>
-        </Box>
+        </Card>
       )}
 
-      {/* Create / Edit Modal */}
-      <Modal isOpen={isOpen} onClose={handleClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {editHomework ? 'Edit Homework' : 'Create Homework'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Title</FormLabel>
-                  <Input {...register('title')} placeholder="Homework title" />
-                </FormControl>
+      {/* Create / Edit Sheet */}
+      <Sheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          if (!open) handleClose();
+        }}
+        title={editHomework ? 'Edit Homework' : 'Create Homework'}
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              loading={createMutation.isPending || updateMutation.isPending}
+              onClick={handleSubmit(onSubmit)}
+            >
+              {editHomework ? 'Update' : 'Create'} Homework
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input label="Title" {...register('title')} placeholder="Homework title" required />
+          <Textarea
+            label="Description"
+            {...register('description')}
+            placeholder="Homework description"
+            rows={4}
+            required
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select label="Subject" {...register('subject')} required>
+              <option value="" disabled>
+                Select subject
+              </option>
+              {subjects.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+            </Select>
+            <Select label="Target Class" {...register('targetClass')} required>
+              <option value="" disabled>
+                Select class
+              </option>
+              {classes.map((cls) => (
+                <option key={cls} value={cls}>
+                  {cls}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Input label="Due Date" type="date" {...register('dueDate')} required />
+          {editHomework && (
+            <Select label="Status" {...register('isActive')} defaultValue="true">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </Select>
+          )}
+        </form>
+      </Sheet>
 
-                <FormControl isRequired>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea {...register('description')} placeholder="Homework description" rows={4} />
-                </FormControl>
+      {/* View Submissions Sheet */}
+      <Sheet
+        open={viewSheetOpen}
+        onOpenChange={(open) => {
+          if (!open) handleViewClose();
+        }}
+        title={`Submissions - ${viewHomework?.title || ''}`}
+        size="xl"
+      >
+        {viewHomework?.submissions?.length === 0 ? (
+          <div className="flex h-48 items-center justify-center">
+            <p className="text-gray-500">No submissions yet</p>
+          </div>
+        ) : (
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>Student</Th>
+                <Th className="hidden sm:table-cell">Submitted At</Th>
+                <Th className="hidden md:table-cell">Content</Th>
+                <Th>Grade</Th>
+                <Th>Feedback</Th>
+                <Th>Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {viewHomework?.submissions?.map((submission, index) => {
+                const studentId =
+                  typeof submission.studentId === 'object'
+                    ? submission.studentId._id
+                    : submission.studentId;
+                const isGrading = gradingStudent === studentId;
 
-                <HStack w="100%" spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Subject</FormLabel>
-                    <Select {...register('subject')} defaultValue="">
-                      <option value="" disabled>
-                        Select subject
-                      </option>
-                      {subjects.map((subject) => (
-                        <option key={subject} value={subject}>
-                          {subject}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl isRequired>
-                    <FormLabel>Target Class</FormLabel>
-                    <Select {...register('targetClass')} defaultValue="">
-                      <option value="" disabled>
-                        Select class
-                      </option>
-                      {classes.map((cls) => (
-                        <option key={cls} value={cls}>
-                          {cls}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </HStack>
-
-                <FormControl isRequired>
-                  <FormLabel>Due Date</FormLabel>
-                  <Input type="date" {...register('dueDate')} />
-                </FormControl>
-
-                {editHomework && (
-                  <FormControl>
-                    <FormLabel>Status</FormLabel>
-                    <Select {...register('isActive')} defaultValue="true">
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
-                    </Select>
-                  </FormControl>
-                )}
-
-                <Button
-                  type="submit"
-                  colorScheme="brand"
-                  w="100%"
-                  isLoading={createMutation.isPending || updateMutation.isPending}
-                >
-                  {editHomework ? 'Update' : 'Create'} Homework
-                </Button>
-              </VStack>
-            </form>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      {/* View Submissions Modal */}
-      <Modal isOpen={isViewOpen} onClose={handleViewClose} size="xl">
-        <ModalOverlay />
-        <ModalContent maxW="900px">
-          <ModalHeader>
-            Submissions - {viewHomework?.title}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            {viewHomework?.submissions?.length === 0 ? (
-              <Center py={8}>
-                <Text color="gray.500">No submissions yet</Text>
-              </Center>
-            ) : (
-              <Table variant="simple" size="sm">
-                <Thead>
-                  <Tr>
-                    <Th>Student</Th>
-                    <Th>Submitted At</Th>
-                    <Th>Content</Th>
-                    <Th>Grade</Th>
-                    <Th>Feedback</Th>
-                    <Th>Actions</Th>
+                return (
+                  <Tr key={index}>
+                    <Td>
+                      <span className="font-medium text-gray-900">
+                        {getStudentName(submission.studentId)}
+                      </span>
+                    </Td>
+                    <Td className="hidden sm:table-cell">
+                      {new Date(submission.submittedAt).toLocaleString()}
+                    </Td>
+                    <Td className="hidden md:table-cell">
+                      <p className="truncate max-w-[150px]">{submission.content}</p>
+                    </Td>
+                    <Td>
+                      {isGrading ? (
+                        <Input
+                          className="w-20"
+                          placeholder="Grade"
+                          {...registerGrade('grade')}
+                        />
+                      ) : (
+                        submission.grade || '-'
+                      )}
+                    </Td>
+                    <Td>
+                      {isGrading ? (
+                        <Textarea
+                          placeholder="Feedback"
+                          rows={2}
+                          className="min-w-[120px]"
+                          {...registerGrade('feedback')}
+                        />
+                      ) : (
+                        <p className="truncate max-w-[150px]">
+                          {submission.feedback || '-'}
+                        </p>
+                      )}
+                    </Td>
+                    <Td>
+                      {isGrading ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="xs"
+                            loading={gradeMutation.isPending}
+                            onClick={handleGradeSubmit(onGradeSubmit)}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="xs"
+                            onClick={() => {
+                              setGradingStudent(null);
+                              resetGrade();
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline-brand"
+                          size="xs"
+                          onClick={() => setGradingStudent(studentId)}
+                        >
+                          Grade
+                        </Button>
+                      )}
+                    </Td>
                   </Tr>
-                </Thead>
-                <Tbody>
-                  {viewHomework?.submissions?.map((submission, index) => {
-                    const studentId =
-                      typeof submission.studentId === 'object'
-                        ? submission.studentId._id
-                        : submission.studentId;
-                    const isGrading = gradingStudent === studentId;
-
-                    return (
-                      <Tr key={index}>
-                        <Td>
-                          <Text fontWeight="medium">
-                            {getStudentName(submission.studentId)}
-                          </Text>
-                        </Td>
-                        <Td>{new Date(submission.submittedAt).toLocaleString()}</Td>
-                        <Td>
-                          <Text noOfLines={2}>{submission.content}</Text>
-                        </Td>
-                        <Td>
-                          {isGrading ? (
-                            <Input
-                              size="sm"
-                              placeholder="Grade"
-                              {...registerGrade('grade')}
-                            />
-                          ) : (
-                            submission.grade || '-'
-                          )}
-                        </Td>
-                        <Td>
-                          {isGrading ? (
-                            <Textarea
-                              size="sm"
-                              placeholder="Feedback"
-                              rows={2}
-                              {...registerGrade('feedback')}
-                            />
-                          ) : (
-                            <Text noOfLines={2}>{submission.feedback || '-'}</Text>
-                          )}
-                        </Td>
-                        <Td>
-                          {isGrading ? (
-                            <HStack>
-                              <Button
-                                size="xs"
-                                colorScheme="brand"
-                                onClick={handleGradeSubmit(onGradeSubmit)}
-                                isLoading={gradeMutation.isPending}
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                size="xs"
-                                onClick={() => {
-                                  setGradingStudent(null);
-                                  resetGrade();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </HStack>
-                          ) : (
-                            <Button
-                              size="xs"
-                              colorScheme="brand"
-                              variant="outline"
-                              onClick={() => setGradingStudent(studentId)}
-                            >
-                              Grade
-                            </Button>
-                          )}
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
+                );
+              })}
+            </Tbody>
+          </Table>
+        )}
+      </Sheet>
+    </div>
   );
 };
 

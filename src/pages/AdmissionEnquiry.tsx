@@ -1,28 +1,18 @@
-import {
-  Box,
-  Button,
-  Container,
-  FormControl,
-  FormLabel,
-  Input,
-  VStack,
-  Heading,
-  Text,
-  Select,
-  Textarea,
-  SimpleGrid,
-  useToast,
-  Alert,
-  AlertIcon,
-  Card,
-  CardBody,
-} from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { admissionsApi } from '../services/api';
+import { useParams } from 'react-router-dom';
+import { AlertCircle, Info } from 'lucide-react';
+import { admissionsApi, tenantApi } from '../services/api';
+import { toast } from '../components/ui/toast';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Textarea } from '../components/ui/Textarea';
+import { Card } from '../components/ui/Card';
+import { LoadingPage } from '../components/ui/Spinner';
 
 const admissionSchema = z.object({
   childFirstName: z.string().min(2, 'First name is required'),
@@ -47,8 +37,14 @@ const admissionSchema = z.object({
 type AdmissionForm = z.infer<typeof admissionSchema>;
 
 export const AdmissionEnquiry = () => {
+  const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const [submitted, setSubmitted] = useState(false);
-  const toast = useToast();
+
+  const { data: tenantInfo, isLoading: tenantLoading, error: tenantError } = useQuery({
+    queryKey: ['tenant-public', tenantSlug],
+    queryFn: () => tenantApi.getBySlug(tenantSlug!).then((res) => res.data),
+    enabled: !!tenantSlug,
+  });
 
   const {
     register,
@@ -60,7 +56,8 @@ export const AdmissionEnquiry = () => {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: AdmissionForm) => admissionsApi.create(data),
+    mutationFn: (data: AdmissionForm) =>
+      admissionsApi.createForTenant(tenantSlug!, data),
     onSuccess: () => {
       setSubmitted(true);
       reset();
@@ -85,214 +82,261 @@ export const AdmissionEnquiry = () => {
     mutation.mutate(data);
   };
 
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <LoadingPage />
+      </div>
+    );
+  }
+
+  if (tenantError || !tenantInfo) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="mx-auto max-w-lg px-4">
+          <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+            <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+            <p className="text-sm text-red-700">
+              School not found. Please check the URL and try again.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const schoolName = tenantInfo.name || 'School';
+  const classes: string[] = tenantInfo.classes || [];
+  const academicYears: string[] = tenantInfo.academicYears || [];
+  const primaryColor = tenantInfo.primaryColor || '#4F46E5';
+
   if (submitted) {
     return (
-      <Box minH="100vh" bg="gray.50" py={12}>
-        <Container maxW="lg">
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="mx-auto max-w-lg px-4">
           <Card>
-            <CardBody textAlign="center" py={12}>
-              <Heading size="lg" color="green.500" mb={4}>
+            <div className="py-8 text-center">
+              <h2 className="text-2xl font-bold text-green-600 mb-4">
                 Application Submitted Successfully!
-              </Heading>
-              <Text color="gray.600" mb={6}>
-                Thank you for your interest in Tiaz Kidz Preschool. Our admissions team will
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Thank you for your interest in {schoolName}. Our admissions team will
                 review your application and contact you within 2-3 business days.
-              </Text>
-              <Button onClick={() => setSubmitted(false)} colorScheme="brand">
+              </p>
+              <Button onClick={() => setSubmitted(false)}>
                 Submit Another Application
               </Button>
-            </CardBody>
+            </div>
           </Card>
-        </Container>
-      </Box>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" py={8}>
-      <Container maxW="3xl">
-        <VStack spacing={6} align="stretch">
-          <Box textAlign="center" mb={4}>
-            <Heading size="xl" color="brand.500" mb={2}>
-              Tiaz Kidz Preschool
-            </Heading>
-            <Heading size="md" fontWeight="normal" color="gray.600">
-              Admission Enquiry Form
-            </Heading>
-          </Box>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="text-center mb-4">
+            {tenantInfo.logo && (
+              <div className="mb-3">
+                <img
+                  src={tenantInfo.logo}
+                  alt={schoolName}
+                  className="mx-auto max-h-20"
+                />
+              </div>
+            )}
+            <h1 className="text-3xl font-bold mb-2" style={{ color: primaryColor }}>
+              {schoolName}
+            </h1>
+            <h2 className="text-lg text-gray-600">Admission Enquiry Form</h2>
+          </div>
 
-          <Alert status="info" borderRadius="md">
-            <AlertIcon />
-            Please fill out all required fields. Our team will contact you after reviewing your
-            application.
-          </Alert>
+          {/* Info Alert */}
+          <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <Info className="h-5 w-5 text-blue-500 shrink-0" />
+            <p className="text-sm text-blue-700">
+              Please fill out all required fields. Our team will contact you after reviewing your
+              application.
+            </p>
+          </div>
 
+          {/* Form Card */}
           <Card>
-            <CardBody>
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <VStack spacing={6} align="stretch">
-                  {/* Child Information */}
-                  <Box>
-                    <Heading size="sm" mb={4} color="brand.600">
-                      Child Information
-                    </Heading>
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                      <FormControl isInvalid={!!errors.childFirstName} isRequired>
-                        <FormLabel>First Name</FormLabel>
-                        <Input {...register('childFirstName')} placeholder="Child's first name" />
-                        {errors.childFirstName && (
-                          <Text color="red.500" fontSize="sm">{errors.childFirstName.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.childLastName} isRequired>
-                        <FormLabel>Last Name</FormLabel>
-                        <Input {...register('childLastName')} placeholder="Child's last name" />
-                        {errors.childLastName && (
-                          <Text color="red.500" fontSize="sm">{errors.childLastName.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.childDateOfBirth} isRequired>
-                        <FormLabel>Date of Birth</FormLabel>
-                        <Input type="date" {...register('childDateOfBirth')} />
-                        {errors.childDateOfBirth && (
-                          <Text color="red.500" fontSize="sm">{errors.childDateOfBirth.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.childGender} isRequired>
-                        <FormLabel>Gender</FormLabel>
-                        <Select {...register('childGender')} placeholder="Select gender">
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </Select>
-                        {errors.childGender && (
-                          <Text color="red.500" fontSize="sm">{errors.childGender.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.preferredClass} isRequired>
-                        <FormLabel>Preferred Class</FormLabel>
-                        <Select {...register('preferredClass')} placeholder="Select class">
-                          <option value="Playgroup">Playgroup (1.5 - 2.5 years)</option>
-                          <option value="Nursery">Nursery (2.5 - 3.5 years)</option>
-                          <option value="LKG">LKG (3.5 - 4.5 years)</option>
-                          <option value="UKG">UKG (4.5 - 5.5 years)</option>
-                        </Select>
-                        {errors.preferredClass && (
-                          <Text color="red.500" fontSize="sm">{errors.preferredClass.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.academicYear} isRequired>
-                        <FormLabel>Academic Year</FormLabel>
-                        <Select {...register('academicYear')} placeholder="Select academic year">
-                          <option value="2025-26">2025-26</option>
-                          <option value="2026-27">2026-27</option>
-                        </Select>
-                        {errors.academicYear && (
-                          <Text color="red.500" fontSize="sm">{errors.academicYear.message}</Text>
-                        )}
-                      </FormControl>
-                    </SimpleGrid>
-                  </Box>
-
-                  {/* Parent/Guardian Information */}
-                  <Box>
-                    <Heading size="sm" mb={4} color="brand.600">
-                      Parent/Guardian Information
-                    </Heading>
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                      <FormControl isInvalid={!!errors.parentFirstName} isRequired>
-                        <FormLabel>First Name</FormLabel>
-                        <Input {...register('parentFirstName')} placeholder="Parent's first name" />
-                        {errors.parentFirstName && (
-                          <Text color="red.500" fontSize="sm">{errors.parentFirstName.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.parentLastName} isRequired>
-                        <FormLabel>Last Name</FormLabel>
-                        <Input {...register('parentLastName')} placeholder="Parent's last name" />
-                        {errors.parentLastName && (
-                          <Text color="red.500" fontSize="sm">{errors.parentLastName.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.parentEmail} isRequired>
-                        <FormLabel>Email Address</FormLabel>
-                        <Input type="email" {...register('parentEmail')} placeholder="email@example.com" />
-                        {errors.parentEmail && (
-                          <Text color="red.500" fontSize="sm">{errors.parentEmail.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl isInvalid={!!errors.parentPhone} isRequired>
-                        <FormLabel>Phone Number</FormLabel>
-                        <Input {...register('parentPhone')} placeholder="+91 9876543210" />
-                        {errors.parentPhone && (
-                          <Text color="red.500" fontSize="sm">{errors.parentPhone.message}</Text>
-                        )}
-                      </FormControl>
-                      <FormControl>
-                        <FormLabel>Alternate Phone</FormLabel>
-                        <Input {...register('alternatePhone')} placeholder="Optional" />
-                      </FormControl>
-                    </SimpleGrid>
-                  </Box>
-
-                  {/* Address */}
-                  <Box>
-                    <Heading size="sm" mb={4} color="brand.600">
-                      Address
-                    </Heading>
-                    <VStack spacing={4} align="stretch">
-                      <FormControl isInvalid={!!errors.address?.street} isRequired>
-                        <FormLabel>Street Address</FormLabel>
-                        <Textarea {...register('address.street')} placeholder="House no, Street name, Locality" rows={2} />
-                        {errors.address?.street && (
-                          <Text color="red.500" fontSize="sm">{errors.address.street.message}</Text>
-                        )}
-                      </FormControl>
-                      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                        <FormControl isInvalid={!!errors.address?.city} isRequired>
-                          <FormLabel>City</FormLabel>
-                          <Input {...register('address.city')} placeholder="City" />
-                          {errors.address?.city && (
-                            <Text color="red.500" fontSize="sm">{errors.address.city.message}</Text>
-                          )}
-                        </FormControl>
-                        <FormControl isInvalid={!!errors.address?.state} isRequired>
-                          <FormLabel>State</FormLabel>
-                          <Input {...register('address.state')} placeholder="State" />
-                          {errors.address?.state && (
-                            <Text color="red.500" fontSize="sm">{errors.address.state.message}</Text>
-                          )}
-                        </FormControl>
-                        <FormControl isInvalid={!!errors.address?.zipCode} isRequired>
-                          <FormLabel>ZIP Code</FormLabel>
-                          <Input {...register('address.zipCode')} placeholder="ZIP Code" />
-                          {errors.address?.zipCode && (
-                            <Text color="red.500" fontSize="sm">{errors.address.zipCode.message}</Text>
-                          )}
-                        </FormControl>
-                      </SimpleGrid>
-                    </VStack>
-                  </Box>
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    colorScheme="brand"
-                    isLoading={mutation.isPending}
-                    loadingText="Submitting..."
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              {/* Child Information */}
+              <div>
+                <h3 className="text-sm font-semibold mb-4" style={{ color: primaryColor }}>
+                  Child Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="First Name"
+                    {...register('childFirstName')}
+                    placeholder="Child's first name"
+                    error={errors.childFirstName?.message}
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    {...register('childLastName')}
+                    placeholder="Child's last name"
+                    error={errors.childLastName?.message}
+                    required
+                  />
+                  <Input
+                    label="Date of Birth"
+                    type="date"
+                    {...register('childDateOfBirth')}
+                    error={errors.childDateOfBirth?.message}
+                    required
+                  />
+                  <Select
+                    label="Gender"
+                    {...register('childGender')}
+                    error={errors.childGender?.message}
+                    required
                   >
-                    Submit Application
-                  </Button>
-                </VStack>
-              </form>
-            </CardBody>
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </Select>
+                  <Select
+                    label="Preferred Class"
+                    {...register('preferredClass')}
+                    error={errors.preferredClass?.message}
+                    required
+                  >
+                    <option value="">Select class</option>
+                    {classes.map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </Select>
+                  <Select
+                    label="Academic Year"
+                    {...register('academicYear')}
+                    error={errors.academicYear?.message}
+                    required
+                  >
+                    <option value="">Select academic year</option>
+                    {academicYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              {/* Parent/Guardian Information */}
+              <div>
+                <h3 className="text-sm font-semibold mb-4" style={{ color: primaryColor }}>
+                  Parent/Guardian Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="First Name"
+                    {...register('parentFirstName')}
+                    placeholder="Parent's first name"
+                    error={errors.parentFirstName?.message}
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    {...register('parentLastName')}
+                    placeholder="Parent's last name"
+                    error={errors.parentLastName?.message}
+                    required
+                  />
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    {...register('parentEmail')}
+                    placeholder="email@example.com"
+                    error={errors.parentEmail?.message}
+                    required
+                  />
+                  <Input
+                    label="Phone Number"
+                    {...register('parentPhone')}
+                    placeholder="+91 9876543210"
+                    error={errors.parentPhone?.message}
+                    required
+                  />
+                  <Input
+                    label="Alternate Phone"
+                    {...register('alternatePhone')}
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+
+              {/* Address */}
+              <div>
+                <h3 className="text-sm font-semibold mb-4" style={{ color: primaryColor }}>
+                  Address
+                </h3>
+                <div className="space-y-4">
+                  <Textarea
+                    label="Street Address"
+                    {...register('address.street')}
+                    placeholder="House no, Street name, Locality"
+                    rows={2}
+                    error={errors.address?.street?.message}
+                    required
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input
+                      label="City"
+                      {...register('address.city')}
+                      placeholder="City"
+                      error={errors.address?.city?.message}
+                      required
+                    />
+                    <Input
+                      label="State"
+                      {...register('address.state')}
+                      placeholder="State"
+                      error={errors.address?.state?.message}
+                      required
+                    />
+                    <Input
+                      label="ZIP Code"
+                      {...register('address.zipCode')}
+                      placeholder="ZIP Code"
+                      error={errors.address?.zipCode?.message}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                loading={mutation.isPending}
+              >
+                Submit Application
+              </Button>
+            </form>
           </Card>
 
-          <Text textAlign="center" fontSize="sm" color="gray.500">
-            For any queries, contact us at admissions@tiazkidz.com or call +91 98765 43210
-          </Text>
-        </VStack>
-      </Container>
-    </Box>
+          {/* Footer contact info */}
+          <p className="text-center text-sm text-gray-500">
+            {tenantInfo.contactEmail && (
+              <>For queries, contact us at {tenantInfo.contactEmail}</>
+            )}
+            {tenantInfo.contactPhone && tenantInfo.contactEmail && ' | '}
+            {tenantInfo.contactPhone && <>{tenantInfo.contactPhone}</>}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };

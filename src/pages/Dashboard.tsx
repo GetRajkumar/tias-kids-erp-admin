@@ -1,50 +1,32 @@
-import {
-  Box,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  Card,
-  CardBody,
-  Heading,
-  Spinner,
-  Center,
-  Icon,
-} from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { FiUsers, FiUserPlus, FiCalendar, FiDollarSign } from 'react-icons/fi';
+import { Users, UserPlus, Calendar, DollarSign, LucideIcon } from 'lucide-react';
 import { reportsApi } from '../services/api';
 import { DashboardStats } from '../types';
+import { Card } from '../components/ui/Card';
+import { LoadingPage } from '../components/ui/Spinner';
+import { cn } from '../lib/utils';
 
-const StatCard = ({
-  label,
-  value,
-  helpText,
-  icon,
-  color,
-}: {
+interface StatCardProps {
   label: string;
   value: string | number;
   helpText?: string;
-  icon: any;
-  color: string;
-}) => (
+  icon: LucideIcon;
+  iconBg: string;
+  iconColor: string;
+}
+
+const StatCard = ({ label, value, helpText, icon: Icon, iconBg, iconColor }: StatCardProps) => (
   <Card>
-    <CardBody>
-      <Stat>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box>
-            <StatLabel color="gray.500">{label}</StatLabel>
-            <StatNumber fontSize="2xl">{value}</StatNumber>
-            {helpText && <StatHelpText>{helpText}</StatHelpText>}
-          </Box>
-          <Box p={3} bg={`${color}.50`} borderRadius="lg">
-            <Icon as={icon} boxSize={6} color={`${color}.500`} />
-          </Box>
-        </Box>
-      </Stat>
-    </CardBody>
+    <div className="flex items-start justify-between">
+      <div className="space-y-1">
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        {helpText && <p className="text-sm text-gray-500">{helpText}</p>}
+      </div>
+      <div className={cn('rounded-lg p-3', iconBg)}>
+        <Icon className={cn('h-6 w-6', iconColor)} />
+      </div>
+    </div>
   </Card>
 );
 
@@ -58,49 +40,49 @@ export const Dashboard = () => {
   });
 
   if (isLoading) {
-    return (
-      <Center h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Center>
-    );
+    return <LoadingPage />;
   }
 
   return (
-    <Box>
-      <Heading size="lg" mb={6}>
+    <div>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">
         Dashboard
-      </Heading>
+      </h1>
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
         <StatCard
           label="Total Students"
           value={data?.totalStudents || 0}
           helpText={`${data?.activeStudents || 0} active`}
-          icon={FiUsers}
-          color="brand"
+          icon={Users}
+          iconBg="bg-brand-50"
+          iconColor="text-brand-500"
         />
         <StatCard
           label="Pending Admissions"
           value={data?.pendingAdmissions || 0}
           helpText="Awaiting review"
-          icon={FiUserPlus}
-          color="secondary"
+          icon={UserPlus}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-500"
         />
         <StatCard
           label="Today's Attendance"
           value={`${data?.todayAttendance?.present || 0}/${data?.todayAttendance?.total || 0}`}
           helpText={`${data?.todayAttendance?.absent || 0} absent`}
-          icon={FiCalendar}
-          color="green"
+          icon={Calendar}
+          iconBg="bg-green-50"
+          iconColor="text-green-500"
         />
         <StatCard
           label="Monthly Revenue"
           value={`$${(data?.monthlyRevenue || 0).toLocaleString()}`}
           helpText={`${data?.pendingPayments || 0} pending`}
-          icon={FiDollarSign}
-          color="orange"
+          icon={DollarSign}
+          iconBg="bg-orange-50"
+          iconColor="text-orange-500"
         />
-      </SimpleGrid>
-    </Box>
+      </div>
+    </div>
   );
 };

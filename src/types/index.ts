@@ -10,6 +10,80 @@ export interface User {
   createdAt: string;
 }
 
+export interface RolePermissions {
+  pages: string[];
+  canManageStudents: boolean;
+  canManageAdmissions: boolean;
+  canManageAttendance: boolean;
+  canManagePayments: boolean;
+  canManageHomework: boolean;
+  canManageAnnouncements: boolean;
+  canManageTickets: boolean;
+  canManageSettings: boolean;
+  canManageUsers: boolean;
+}
+
+export interface RoleConfig {
+  name: string;
+  description: string;
+  isSystem: boolean;
+  permissions: RolePermissions;
+}
+
+export interface TenantSettings {
+  currency: string;
+  currencySymbol: string;
+  timezone: string;
+  classes: string[];
+  sections: string[];
+  subjects: string[];
+  academicYears: string[];
+  roles?: RoleConfig[];
+  razorpayKeyId?: string;
+  razorpayKeySecret?: string;
+  razorpayEnabled?: boolean;
+}
+
+export interface TenantUser {
+  _id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  settings: TenantSettings;
+}
+
+export interface TenantListItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string;
+  role: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: User;
+  tenant: Tenant | null;
+  tenants: TenantListItem[];
+  requiresTenantSelection: boolean;
+}
+
 export interface MedicalInfo {
   allergies?: string[];
   medications?: string[];
