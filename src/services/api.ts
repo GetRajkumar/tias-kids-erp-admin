@@ -18,15 +18,41 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tenant');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
+// Auth API
 export const authApi = {
-  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  login: (email: string, password: string, tenantSlug?: string) =>
+    api.post('/auth/login', { email, password, tenantSlug }),
+  selectTenant: (tenantSlug: string) =>
+    api.post('/auth/select-tenant', { tenantSlug }),
   getProfile: () => api.get('/auth/profile'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }),
+};
+
+// Tenant API
+export const tenantApi = {
+  getAll: () => api.get('/tenants'),
+  getById: (id: string) => api.get(`/tenants/${id}`),
+  getBySlug: (slug: string) => api.get(`/tenants/by-slug/${slug}`),
+  getMyTenants: () => api.get('/tenants/my-tenants'),
+  getSettings: () => api.get('/tenants/settings'),
+  updateMySettings: (data: any) => api.patch('/tenants/my-settings', data),
+  create: (data: any) => api.post('/tenants', data),
+  update: (id: string, data: any) => api.patch(`/tenants/${id}`, data),
+  delete: (id: string) => api.delete(`/tenants/${id}`),
+  getUsers: () => api.get('/tenants/users'),
+  addUser: (data: any) => api.post('/tenants/users', data),
+  updateUserRole: (userId: string, role: string) =>
+    api.patch(`/tenants/users/${userId}/role`, { role }),
+  removeUser: (userId: string) => api.delete(`/tenants/users/${userId}`),
 };
 
 export const studentsApi = {
@@ -38,14 +64,19 @@ export const studentsApi = {
 };
 
 export const usersApi = {
+  getAll: () => api.get('/users'),
   getById: (id: string) => api.get(`/users/${id}`),
+  create: (data: any) => api.post('/users', data),
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
 };
 
 export const admissionsApi = {
   getAll: (status?: string) => api.get('/admissions', { params: { status } }),
   getById: (id: string) => api.get(`/admissions/${id}`),
   create: (data: any) => api.post('/admissions', data),
+  createForTenant: (tenantSlug: string, data: any) =>
+    api.post(`/admissions/tenant/${tenantSlug}`, data),
   approve: (id: string) => api.post(`/admissions/${id}/approve`),
   reject: (id: string, reason: string) => api.post(`/admissions/${id}/reject`, { reason }),
   updateStatus: (id: string, status: string, comment: string) =>
@@ -77,6 +108,15 @@ export const paymentSchedulesApi = {
   getByParent: (parentId: string) => api.get(`/payment-schedules/parent/${parentId}`),
   getOverdue: () => api.get('/payment-schedules/overdue'),
   recordPayment: (data: any) => api.post('/payment-schedules/record-payment', data),
+  sendReminder: (scheduleId: string, installmentNumber: number) =>
+    api.post(`/payment-schedules/${scheduleId}/send-reminder`, { installmentNumber }),
+  // Advance Payment APIs
+  createAdvancePayment: (data: any) => api.post('/payment-schedules/advance-payment', data),
+  getAllAdvancePayments: () => api.get('/payment-schedules/advance-payment'),
+  getAdvancePaymentsByStudent: (studentId: string) => 
+    api.get(`/payment-schedules/advance-payment/student/${studentId}`),
+  getUnusedAdvancePayment: (studentId: string) => 
+    api.get(`/payment-schedules/advance-payment/student/${studentId}/unused`),
 };
 
 export const ticketsApi = {

@@ -1,23 +1,12 @@
-import React, { useState } from 'react';
-import {
-  VStack,
-  HStack,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Button,
-  Textarea,
-  Box,
-  Divider,
-  Heading,
-  IconButton,
-  Badge,
-  Wrap,
-} from '@chakra-ui/react';
-import { FiX } from 'react-icons/fi';
-import { useForm, Controller } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { X } from 'lucide-react';
 import { Student } from '../../types';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
+import { Badge } from '../ui/Badge';
 
 interface StudentFormProps {
   student?: Student;
@@ -33,46 +22,50 @@ export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFor
     return d.toISOString().split('T')[0];
   };
 
-  const { register, handleSubmit, control, formState: { errors }, watch } = useForm({
-    defaultValues: student ? {
-      ...student,
-      dateOfBirth: formatDateForInput(student.dateOfBirth),
-    } : {
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      gender: '',
-      bloodGroup: '',
-      class: '',
-      section: '',
-      address: {},
-      emergencyContact: {},
-      medicalInfo: {
-        allergies: [],
-        medications: [],
-        medicalConditions: [],
-        specialNeeds: '',
-      },
-      parentInfo: {
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        alternatePhone: '',
-      },
-    },
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: student
+      ? {
+          ...student,
+          dateOfBirth: formatDateForInput(student.dateOfBirth),
+        }
+      : {
+          firstName: '',
+          lastName: '',
+          dateOfBirth: '',
+          gender: '',
+          bloodGroup: '',
+          class: '',
+          section: '',
+          address: {},
+          emergencyContact: {},
+          medicalInfo: {
+            allergies: [],
+            medications: [],
+            medicalConditions: [],
+            specialNeeds: '',
+          },
+          parentInfo: {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            alternatePhone: '',
+          },
+        },
   });
 
   const [allergies, setAllergies] = useState<string[]>(student?.medicalInfo?.allergies || []);
   const [medications, setMedications] = useState<string[]>(student?.medicalInfo?.medications || []);
-  const [medicalConditions, setMedicalConditions] = useState<string[]>(student?.medicalInfo?.medicalConditions || []);
+  const [medicalConditions, setMedicalConditions] = useState<string[]>(
+    student?.medicalInfo?.medicalConditions || []
+  );
   const [allergyInput, setAllergyInput] = useState('');
   const [medicationInput, setMedicationInput] = useState('');
   const [conditionInput, setConditionInput] = useState('');
 
   const addAllergy = () => {
     if (allergyInput.trim()) {
-      setAllergies([...allergies, allergyInput]);
+      setAllergies([...allergies, allergyInput.trim()]);
       setAllergyInput('');
     }
   };
@@ -83,7 +76,7 @@ export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFor
 
   const addMedication = () => {
     if (medicationInput.trim()) {
-      setMedications([...medications, medicationInput]);
+      setMedications([...medications, medicationInput.trim()]);
       setMedicationInput('');
     }
   };
@@ -94,7 +87,7 @@ export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFor
 
   const addCondition = () => {
     if (conditionInput.trim()) {
-      setMedicalConditions([...medicalConditions, conditionInput]);
+      setMedicalConditions([...medicalConditions, conditionInput.trim()]);
       setConditionInput('');
     }
   };
@@ -119,335 +112,289 @@ export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFor
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)}>
-      <VStack spacing={6}>
-        {/* Basic Information */}
-        <Box w="100%">
-          <Heading size="sm" mb={4}>
-            Basic Information
-          </Heading>
-          <VStack spacing={4}>
-            <HStack w="100%">
-              <FormControl isRequired>
-                <FormLabel>First Name</FormLabel>
-                <Input
-                  {...register('firstName', { required: 'First name is required' })}
-                  placeholder="First name"
-                  isInvalid={!!errors.firstName}
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Last Name</FormLabel>
-                <Input
-                  {...register('lastName', { required: 'Last name is required' })}
-                  placeholder="Last name"
-                  isInvalid={!!errors.lastName}
-                />
-              </FormControl>
-            </HStack>
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Basic Information */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Basic Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="First Name"
+            placeholder="First name"
+            {...register('firstName', { required: 'First name is required' })}
+            error={errors.firstName?.message as string}
+          />
+          <Input
+            label="Last Name"
+            placeholder="Last name"
+            {...register('lastName', { required: 'Last name is required' })}
+            error={errors.lastName?.message as string}
+          />
+          <Input
+            label="Date of Birth"
+            type="date"
+            {...register('dateOfBirth', { required: 'Date of birth is required' })}
+            error={errors.dateOfBirth?.message as string}
+          />
+          <Select label="Gender" {...register('gender')}>
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </Select>
+          <Select label="Blood Group" {...register('bloodGroup')}>
+            <option value="">Select blood group</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </Select>
+          <Select label="Class" {...register('class')}>
+            <option value="">Select class</option>
+            <option value="Nursery">Nursery</option>
+            <option value="LKG">LKG</option>
+            <option value="UKG">UKG</option>
+          </Select>
+          <Select label="Section" {...register('section')}>
+            <option value="">Select section</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </Select>
+        </div>
+      </div>
 
-            <HStack w="100%">
-              <FormControl isRequired>
-                <FormLabel>Date of Birth</FormLabel>
-                <Input
-                  type="date"
-                  {...register('dateOfBirth', { required: 'Date of birth is required' })}
-                  isInvalid={!!errors.dateOfBirth}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Gender</FormLabel>
-                <Select {...register('gender')} placeholder="Select gender">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </Select>
-              </FormControl>
-            </HStack>
+      <hr className="border-gray-200" />
 
-            <HStack w="100%">
-              <FormControl>
-                <FormLabel>Blood Group</FormLabel>
-                <Select {...register('bloodGroup')} placeholder="Select blood group">
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
-                  <option value="O+">O+</option>
-                  <option value="O-">O-</option>
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Class</FormLabel>
-                <Select {...register('class')} placeholder="Select class">
-                  <option value="Nursery">Nursery</option>
-                  <option value="LKG">LKG</option>
-                  <option value="UKG">UKG</option>
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Section</FormLabel>
-                <Select {...register('section')} placeholder="Select section">
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                </Select>
-              </FormControl>
-            </HStack>
-          </VStack>
-        </Box>
+      {/* Parent/Guardian Information */}
+      {!isEdit && (
+        <>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Parent/Guardian Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="First Name"
+                placeholder="Parent's first name"
+                {...register('parentInfo.firstName', {
+                  required: !isEdit ? 'Parent first name is required' : false,
+                })}
+              />
+              <Input
+                label="Last Name"
+                placeholder="Parent's last name"
+                {...register('parentInfo.lastName', {
+                  required: !isEdit ? 'Parent last name is required' : false,
+                })}
+              />
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="email@example.com"
+                {...register('parentInfo.email', {
+                  required: !isEdit ? 'Email is required' : false,
+                })}
+              />
+              <Input
+                label="Phone Number"
+                placeholder="+91 9876543210"
+                {...register('parentInfo.phone', {
+                  required: !isEdit ? 'Phone is required' : false,
+                })}
+              />
+              <Input
+                label="Alternate Phone"
+                placeholder="Optional"
+                {...register('parentInfo.alternatePhone')}
+              />
+            </div>
+          </div>
+          <hr className="border-gray-200" />
+        </>
+      )}
 
-        <Divider />
-
-        {/* Parent/Guardian Information */}
-        {!isEdit && (
-          <Box w="100%">
-            <Heading size="sm" mb={4}>
-              Parent/Guardian Information
-            </Heading>
-            <VStack spacing={4}>
-              <HStack w="100%">
-                <FormControl isRequired>
-                  <FormLabel>First Name</FormLabel>
-                  <Input
-                    {...register('parentInfo.firstName', { required: !isEdit ? 'Parent first name is required' : false })}
-                    placeholder="Parent's first name"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Last Name</FormLabel>
-                  <Input
-                    {...register('parentInfo.lastName', { required: !isEdit ? 'Parent last name is required' : false })}
-                    placeholder="Parent's last name"
-                  />
-                </FormControl>
-              </HStack>
-              <HStack w="100%">
-                <FormControl isRequired>
-                  <FormLabel>Email Address</FormLabel>
-                  <Input
-                    type="email"
-                    {...register('parentInfo.email', { required: !isEdit ? 'Email is required' : false })}
-                    placeholder="email@example.com"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Phone Number</FormLabel>
-                  <Input
-                    {...register('parentInfo.phone', { required: !isEdit ? 'Phone is required' : false })}
-                    placeholder="+91 9876543210"
-                  />
-                </FormControl>
-              </HStack>
-              <FormControl>
-                <FormLabel>Alternate Phone</FormLabel>
-                <Input
-                  {...register('parentInfo.alternatePhone')}
-                  placeholder="Optional"
-                />
-              </FormControl>
-            </VStack>
-          </Box>
-        )}
-
-        <Divider />
-
-        {/* Medical Information */}
-        <Box w="100%">
-          <Heading size="sm" mb={4}>
-            Medical Information
-          </Heading>
-          <VStack spacing={4}>
-            {/* Allergies */}
-            <FormControl>
-              <FormLabel>Allergies</FormLabel>
-              <HStack w="100%">
-                <Input
-                  placeholder="Enter allergy (e.g., Peanuts)"
-                  value={allergyInput}
-                  onChange={(e) => setAllergyInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (addAllergy(), e.preventDefault())}
-                />
-                <Button onClick={addAllergy} colorScheme="blue" size="sm">
-                  Add
-                </Button>
-              </HStack>
-              <Wrap mt={2} spacing={2}>
+      {/* Medical Information */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Medical Information</h3>
+        <div className="space-y-4">
+          {/* Allergies */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Allergies</label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter allergy (e.g., Peanuts)"
+                value={allergyInput}
+                onChange={(e) => setAllergyInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addAllergy();
+                  }
+                }}
+              />
+              <Button type="button" size="sm" onClick={addAllergy}>
+                Add
+              </Button>
+            </div>
+            {allergies.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
                 {allergies.map((allergy, index) => (
-                  <Badge key={index} colorScheme="red" px={2} py={1}>
+                  <Badge key={index} color="red" className="gap-1">
                     {allergy}
-                    <IconButton
-                      aria-label="remove"
-                      icon={<FiX />}
-                      size="xs"
-                      ml={2}
-                      variant="ghost"
+                    <button
+                      type="button"
                       onClick={() => removeAllergy(index)}
-                    />
+                      className="ml-1 hover:text-red-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
-              </Wrap>
-            </FormControl>
+              </div>
+            )}
+          </div>
 
-            {/* Medical Conditions */}
-            <FormControl>
-              <FormLabel>Medical Conditions</FormLabel>
-              <HStack w="100%">
-                <Input
-                  placeholder="Enter medical condition (e.g., Asthma)"
-                  value={conditionInput}
-                  onChange={(e) => setConditionInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (addCondition(), e.preventDefault())}
-                />
-                <Button onClick={addCondition} colorScheme="blue" size="sm">
-                  Add
-                </Button>
-              </HStack>
-              <Wrap mt={2} spacing={2}>
+          {/* Medical Conditions */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Medical Conditions</label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter medical condition (e.g., Asthma)"
+                value={conditionInput}
+                onChange={(e) => setConditionInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCondition();
+                  }
+                }}
+              />
+              <Button type="button" size="sm" onClick={addCondition}>
+                Add
+              </Button>
+            </div>
+            {medicalConditions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
                 {medicalConditions.map((condition, index) => (
-                  <Badge key={index} colorScheme="orange" px={2} py={1}>
+                  <Badge key={index} color="orange" className="gap-1">
                     {condition}
-                    <IconButton
-                      aria-label="remove"
-                      icon={<FiX />}
-                      size="xs"
-                      ml={2}
-                      variant="ghost"
+                    <button
+                      type="button"
                       onClick={() => removeCondition(index)}
-                    />
+                      className="ml-1 hover:text-orange-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
-              </Wrap>
-            </FormControl>
+              </div>
+            )}
+          </div>
 
-            {/* Medications */}
-            <FormControl>
-              <FormLabel>Current Medications</FormLabel>
-              <HStack w="100%">
-                <Input
-                  placeholder="Enter medication (e.g., Inhaler)"
-                  value={medicationInput}
-                  onChange={(e) => setMedicationInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (addMedication(), e.preventDefault())}
-                />
-                <Button onClick={addMedication} colorScheme="blue" size="sm">
-                  Add
-                </Button>
-              </HStack>
-              <Wrap mt={2} spacing={2}>
+          {/* Medications */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Current Medications</label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter medication (e.g., Inhaler)"
+                value={medicationInput}
+                onChange={(e) => setMedicationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addMedication();
+                  }
+                }}
+              />
+              <Button type="button" size="sm" onClick={addMedication}>
+                Add
+              </Button>
+            </div>
+            {medications.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
                 {medications.map((medication, index) => (
-                  <Badge key={index} colorScheme="green" px={2} py={1}>
+                  <Badge key={index} color="green" className="gap-1">
                     {medication}
-                    <IconButton
-                      aria-label="remove"
-                      icon={<FiX />}
-                      size="xs"
-                      ml={2}
-                      variant="ghost"
+                    <button
+                      type="button"
                       onClick={() => removeMedication(index)}
-                    />
+                      className="ml-1 hover:text-green-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
-              </Wrap>
-            </FormControl>
+              </div>
+            )}
+          </div>
 
-            {/* Special Needs */}
-            <FormControl>
-              <FormLabel>Special Needs / Notes</FormLabel>
-              <Textarea
-                {...register('medicalInfo.specialNeeds')}
-                placeholder="Any special needs or additional medical notes"
-                rows={3}
-              />
-            </FormControl>
-          </VStack>
-        </Box>
+          {/* Special Needs */}
+          <Textarea
+            label="Special Needs / Notes"
+            placeholder="Any special needs or additional medical notes"
+            rows={3}
+            {...register('medicalInfo.specialNeeds')}
+          />
+        </div>
+      </div>
 
-        <Divider />
+      <hr className="border-gray-200" />
 
-        {/* Emergency Contact */}
-        <Box w="100%">
-          <Heading size="sm" mb={4}>
-            Emergency Contact
-          </Heading>
-          <VStack spacing={4}>
-            <FormControl>
-              <FormLabel>Contact Name</FormLabel>
-              <Input
-                {...register('emergencyContact.name')}
-                placeholder="Emergency contact name"
-              />
-            </FormControl>
-            <HStack w="100%">
-              <FormControl>
-                <FormLabel>Relation</FormLabel>
-                <Select {...register('emergencyContact.relation')} placeholder="Select relation">
-                  <option value="Mother">Mother</option>
-                  <option value="Father">Father</option>
-                  <option value="Grandmother">Grandmother</option>
-                  <option value="Grandfather">Grandfather</option>
-                  <option value="Uncle">Uncle</option>
-                  <option value="Aunt">Aunt</option>
-                  <option value="Other">Other</option>
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Phone Number</FormLabel>
-                <Input
-                  {...register('emergencyContact.phone')}
-                  placeholder="Phone number"
-                  type="tel"
-                />
-              </FormControl>
-            </HStack>
-          </VStack>
-        </Box>
+      {/* Emergency Contact */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Emergency Contact</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <Input
+              label="Contact Name"
+              placeholder="Emergency contact name"
+              {...register('emergencyContact.name')}
+            />
+          </div>
+          <Select label="Relation" {...register('emergencyContact.relation')}>
+            <option value="">Select relation</option>
+            <option value="Mother">Mother</option>
+            <option value="Father">Father</option>
+            <option value="Grandmother">Grandmother</option>
+            <option value="Grandfather">Grandfather</option>
+            <option value="Uncle">Uncle</option>
+            <option value="Aunt">Aunt</option>
+            <option value="Other">Other</option>
+          </Select>
+          <Input
+            label="Phone Number"
+            placeholder="Phone number"
+            type="tel"
+            {...register('emergencyContact.phone')}
+          />
+        </div>
+      </div>
 
-        <Divider />
+      <hr className="border-gray-200" />
 
-        {/* Address */}
-        <Box w="100%">
-          <Heading size="sm" mb={4}>
-            Address
-          </Heading>
-          <VStack spacing={4}>
-            <FormControl>
-              <FormLabel>Street Address</FormLabel>
-              <Input
-                {...register('address.street')}
-                placeholder="Street address"
-              />
-            </FormControl>
-            <HStack w="100%">
-              <FormControl>
-                <FormLabel>City</FormLabel>
-                <Input {...register('address.city')} placeholder="City" />
-              </FormControl>
-              <FormControl>
-                <FormLabel>State</FormLabel>
-                <Input {...register('address.state')} placeholder="State" />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Zip Code</FormLabel>
-                <Input {...register('address.zipCode')} placeholder="Zip code" />
-              </FormControl>
-            </HStack>
-          </VStack>
-        </Box>
+      {/* Address */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Address</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <Input
+              label="Street Address"
+              placeholder="Street address"
+              {...register('address.street')}
+            />
+          </div>
+          <Input label="City" placeholder="City" {...register('address.city')} />
+          <Input label="State" placeholder="State" {...register('address.state')} />
+          <Input label="Zip Code" placeholder="Zip code" {...register('address.zipCode')} />
+        </div>
+      </div>
 
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          colorScheme="blue"
-          w="100%"
-          isLoading={isLoading}
-          size="lg"
-        >
-          {isEdit ? 'Update Student' : 'Create Student'}
-        </Button>
-      </VStack>
+      {/* Submit Button */}
+      <Button type="submit" loading={isLoading} className="w-full" size="lg">
+        {isEdit ? 'Update Student' : 'Create Student'}
+      </Button>
     </form>
   );
 };

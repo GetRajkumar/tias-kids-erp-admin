@@ -1,40 +1,20 @@
-import {
-  Box,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Button,
-  HStack,
-  Spinner,
-  Center,
-  Select,
-  useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  Input,
-  FormControl,
-  FormLabel,
-  VStack,
-  Text,
-  Textarea,
-  IconButton,
-} from '@chakra-ui/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { Trash2, Pencil } from 'lucide-react';
 import { announcementsApi } from '../services/api';
 import { Announcement } from '../types';
+import { useTenant } from '../contexts/TenantContext';
+import { toast } from '../components/ui/toast';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Textarea } from '../components/ui/Textarea';
+import { Badge } from '../components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { Sheet } from '../components/ui/Sheet';
+import { Card } from '../components/ui/Card';
+import { LoadingPage } from '../components/ui/Spinner';
 
 const typeColors: Record<string, string> = {
   general: 'blue',
@@ -45,9 +25,9 @@ const typeColors: Record<string, string> = {
 };
 
 export const Announcements = () => {
+  const { classes } = useTenant();
   const [editAnnouncement, setEditAnnouncement] = useState<Announcement | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const toast = useToast();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, setValue } = useForm();
 
@@ -97,10 +77,10 @@ export const Announcements = () => {
   const handleClose = () => {
     setEditAnnouncement(null);
     reset();
-    onClose();
+    setSheetOpen(false);
   };
 
-  const openEditModal = (announcement: Announcement) => {
+  const openEditSheet = (announcement: Announcement) => {
     setEditAnnouncement(announcement);
     setValue('title', announcement.title);
     setValue('content', announcement.content);
@@ -110,7 +90,7 @@ export const Announcements = () => {
     setValue('publishDate', announcement.publishDate.split('T')[0]);
     setValue('expiryDate', announcement.expiryDate?.split('T')[0] || '');
     setValue('isActive', announcement.isActive);
-    onOpen();
+    setSheetOpen(true);
   };
 
   const onSubmit = (data: any) => {
@@ -129,31 +109,25 @@ export const Announcements = () => {
   };
 
   if (isLoading) {
-    return (
-      <Center h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Center>
-    );
+    return <LoadingPage />;
   }
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={6}>
-        <Heading size="lg">Announcements</Heading>
-        <Button colorScheme="brand" onClick={onOpen}>
-          Create Announcement
-        </Button>
-      </HStack>
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+        <Button onClick={() => setSheetOpen(true)}>Create Announcement</Button>
+      </div>
 
-      <Box bg="white" borderRadius="lg" shadow="sm" p={4}>
-        <Table variant="simple">
+      <Card padding={false}>
+        <Table>
           <Thead>
             <Tr>
               <Th>Title</Th>
               <Th>Type</Th>
-              <Th>Target</Th>
+              <Th className="hidden md:table-cell">Target</Th>
               <Th>Status</Th>
-              <Th>Publish Date</Th>
+              <Th className="hidden sm:table-cell">Publish Date</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -161,147 +135,132 @@ export const Announcements = () => {
             {announcements?.map((announcement) => (
               <Tr key={announcement._id}>
                 <Td>
-                  <Text fontWeight="medium">{announcement.title}</Text>
-                  <Text fontSize="sm" color="gray.500" noOfLines={1}>
-                    {announcement.content}
-                  </Text>
+                  <div>
+                    <span className="font-medium text-gray-900">{announcement.title}</span>
+                    <p className="text-sm text-gray-500 truncate max-w-[200px]">
+                      {announcement.content}
+                    </p>
+                  </div>
                 </Td>
                 <Td>
-                  <Badge colorScheme={typeColors[announcement.type]}>
+                  <Badge color={typeColors[announcement.type]}>
                     {announcement.type.replace('_', ' ')}
                   </Badge>
                 </Td>
-                <Td>
-                  <Text>{announcement.targetAudience}</Text>
-                  {announcement.targetClass && (
-                    <Text fontSize="sm" color="gray.500">
-                      {announcement.targetClass}
-                    </Text>
-                  )}
+                <Td className="hidden md:table-cell">
+                  <div>
+                    <span>{announcement.targetAudience}</span>
+                    {announcement.targetClass && (
+                      <p className="text-sm text-gray-500">{announcement.targetClass}</p>
+                    )}
+                  </div>
                 </Td>
                 <Td>
-                  <Badge colorScheme={announcement.isActive ? 'green' : 'gray'}>
+                  <Badge color={announcement.isActive ? 'green' : 'gray'}>
                     {announcement.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </Td>
-                <Td>{new Date(announcement.publishDate).toLocaleDateString()}</Td>
+                <Td className="hidden sm:table-cell">
+                  {new Date(announcement.publishDate).toLocaleDateString()}
+                </Td>
                 <Td>
-                  <HStack>
-                    <IconButton
-                      aria-label="Edit"
-                      icon={<FiEdit2 />}
-                      size="sm"
-                      onClick={() => openEditModal(announcement)}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      icon={<Pencil className="h-4 w-4" />}
+                      onClick={() => openEditSheet(announcement)}
                     />
-                    <IconButton
-                      aria-label="Delete"
-                      icon={<FiTrash2 />}
-                      size="sm"
-                      colorScheme="red"
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      icon={<Trash2 className="h-4 w-4" />}
                       onClick={() => {
                         if (window.confirm('Are you sure you want to delete this announcement?')) {
                           deleteMutation.mutate(announcement._id);
                         }
                       }}
                     />
-                  </HStack>
+                  </div>
                 </Td>
               </Tr>
             ))}
+            {announcements?.length === 0 && (
+              <Tr>
+                <Td colSpan={6}>
+                  <div className="py-8 text-center text-gray-500">No announcements found</div>
+                </Td>
+              </Tr>
+            )}
           </Tbody>
         </Table>
-      </Box>
+      </Card>
 
-      <Modal isOpen={isOpen} onClose={handleClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {editAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <VStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Title</FormLabel>
-                  <Input {...register('title')} placeholder="Announcement title" />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Content</FormLabel>
-                  <Textarea {...register('content')} placeholder="Announcement content" rows={4} />
-                </FormControl>
-
-                <HStack w="100%" spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Type</FormLabel>
-                    <Select {...register('type')} defaultValue="general">
-                      <option value="general">General</option>
-                      <option value="homework">Homework</option>
-                      <option value="event">Event</option>
-                      <option value="urgent">Urgent</option>
-                      <option value="daily_task">Daily Task</option>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl isRequired>
-                    <FormLabel>Target Audience</FormLabel>
-                    <Select {...register('targetAudience')} defaultValue="all">
-                      <option value="all">All</option>
-                      <option value="parents">Parents Only</option>
-                      <option value="teachers">Teachers Only</option>
-                      <option value="class">Specific Class</option>
-                    </Select>
-                  </FormControl>
-                </HStack>
-
-                <FormControl>
-                  <FormLabel>Target Class (if applicable)</FormLabel>
-                  <Select {...register('targetClass')} placeholder="Select class">
-                    <option value="">All Classes</option>
-                    <option value="LKG">LKG</option>
-                    <option value="UKG">UKG</option>
-                    <option value="Class 1">Class 1</option>
-                    <option value="Class 2">Class 2</option>
-                    <option value="Class 3">Class 3</option>
-                    <option value="Class 4">Class 4</option>
-                    <option value="Class 5">Class 5</option>
-                  </Select>
-                </FormControl>
-
-                <HStack w="100%" spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Publish Date</FormLabel>
-                    <Input type="date" {...register('publishDate')} />
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Expiry Date</FormLabel>
-                    <Input type="date" {...register('expiryDate')} />
-                  </FormControl>
-                </HStack>
-
-                <FormControl>
-                  <FormLabel>Status</FormLabel>
-                  <Select {...register('isActive')} defaultValue="true">
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                  </Select>
-                </FormControl>
-
-                <Button
-                  type="submit"
-                  colorScheme="brand"
-                  w="100%"
-                  isLoading={createMutation.isPending || updateMutation.isPending}
-                >
-                  {editAnnouncement ? 'Update' : 'Create'} Announcement
-                </Button>
-              </VStack>
-            </form>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
+      {/* Create / Edit Sheet */}
+      <Sheet
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          if (!open) handleClose();
+        }}
+        title={editAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              loading={createMutation.isPending || updateMutation.isPending}
+              onClick={handleSubmit(onSubmit)}
+            >
+              {editAnnouncement ? 'Update' : 'Create'} Announcement
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Input label="Title" {...register('title')} placeholder="Announcement title" required />
+          <Textarea
+            label="Content"
+            {...register('content')}
+            placeholder="Announcement content"
+            rows={4}
+            required
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select label="Type" {...register('type')} defaultValue="general" required>
+              <option value="general">General</option>
+              <option value="homework">Homework</option>
+              <option value="event">Event</option>
+              <option value="urgent">Urgent</option>
+              <option value="daily_task">Daily Task</option>
+            </Select>
+            <Select label="Target Audience" {...register('targetAudience')} defaultValue="all" required>
+              <option value="all">All</option>
+              <option value="parents">Parents Only</option>
+              <option value="teachers">Teachers Only</option>
+              <option value="class">Specific Class</option>
+            </Select>
+          </div>
+          <Select label="Target Class (if applicable)" {...register('targetClass')}>
+            <option value="">All Classes</option>
+            {classes.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Publish Date" type="date" {...register('publishDate')} required />
+            <Input label="Expiry Date" type="date" {...register('expiryDate')} />
+          </div>
+          <Select label="Status" {...register('isActive')} defaultValue="true">
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </Select>
+        </form>
+      </Sheet>
+    </div>
   );
 };

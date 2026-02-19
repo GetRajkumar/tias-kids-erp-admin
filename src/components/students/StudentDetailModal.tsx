@@ -1,37 +1,16 @@
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  ModalFooter,
-  VStack,
-  HStack,
-  Box,
-  Badge,
-  Text,
-  Heading,
-  Divider,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Spinner,
-  Center,
-  Button,
-  useToast,
-  Input,
-  FormControl,
-  FormLabel,
-  SimpleGrid,
-} from '@chakra-ui/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import { Student } from '../../types';
 import { studentsApi, usersApi } from '../../services/api';
 import { StudentForm } from './StudentForm';
+import { Sheet } from '../ui/Sheet';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Spinner } from '../ui/Spinner';
+import { toast } from '../ui/toast';
 
 interface StudentDetailModalProps {
   isOpen: boolean;
@@ -40,7 +19,6 @@ interface StudentDetailModalProps {
 }
 
 export const StudentDetailModal = ({ isOpen, onClose, studentId }: StudentDetailModalProps) => {
-  const toast = useToast();
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
 
@@ -75,60 +53,62 @@ export const StudentDetailModal = ({ isOpen, onClose, studentId }: StudentDetail
     updateMutation.mutate(data);
   };
 
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      setIsEditMode(false);
+      onClose();
+    }
+  };
+
   if (!studentId) return null;
 
+  const footer = (
+    <div className="flex items-center justify-end gap-3">
+      {!isEditMode ? (
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          <Button icon={<Pencil className="h-4 w-4" />} onClick={() => setIsEditMode(true)}>
+            Edit Student
+          </Button>
+        </>
+      ) : (
+        <Button variant="secondary" onClick={() => setIsEditMode(false)}>
+          Cancel
+        </Button>
+      )}
+    </div>
+  );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
-      <ModalOverlay />
-      <ModalContent maxH="90vh" overflowY="auto">
-        <ModalHeader>
-          {isEditMode ? 'Edit Student' : 'Student Details'}
-        </ModalHeader>
-        <ModalCloseButton />
-
-        <ModalBody>
-          {isLoading ? (
-            <Center h="300px">
-              <Spinner size="lg" color="blue.500" />
-            </Center>
-          ) : isEditMode ? (
-            <StudentForm
-              student={student}
-              onSubmit={handleUpdate}
-              isLoading={updateMutation.isPending}
-              isEdit={true}
-            />
-          ) : (
-            student && <StudentDetailView student={student} />
-          )}
-        </ModalBody>
-
-        <ModalFooter>
-          {!isEditMode && (
-            <HStack spacing={3}>
-              <Button variant="ghost" onClick={onClose}>
-                Close
-              </Button>
-              <Button colorScheme="blue" onClick={() => setIsEditMode(true)}>
-                Edit Student
-              </Button>
-            </HStack>
-          )}
-          {isEditMode && (
-            <HStack spacing={3}>
-              <Button variant="ghost" onClick={() => setIsEditMode(false)}>
-                Cancel
-              </Button>
-            </HStack>
-          )}
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <Sheet
+      open={isOpen}
+      onOpenChange={handleClose}
+      side="right"
+      size="xl"
+      title={isEditMode ? 'Edit Student' : 'Student Details'}
+      footer={footer}
+    >
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <Spinner size="lg" />
+        </div>
+      ) : isEditMode ? (
+        <StudentForm
+          student={student}
+          onSubmit={handleUpdate}
+          isLoading={updateMutation.isPending}
+          isEdit
+        />
+      ) : (
+        student && <StudentDetailView student={student} />
+      )}
+    </Sheet>
   );
 };
 
 const StudentDetailView = ({ student }: { student: Student }) => {
-  const toast = useToast();
   const queryClient = useQueryClient();
   const [isEditingParent, setIsEditingParent] = useState(false);
   const [parentForm, setParentForm] = useState({
@@ -165,290 +145,247 @@ const StudentDetailView = ({ student }: { student: Student }) => {
   };
 
   return (
-    <Tabs>
-      <TabList>
-        <Tab>General</Tab>
-        <Tab>Parent</Tab>
-        <Tab>Medical</Tab>
-        <Tab>Contact</Tab>
-        <Tab>Address</Tab>
-      </TabList>
+    <Tabs defaultValue="general">
+      <TabsList>
+        <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="parent">Parent</TabsTrigger>
+        <TabsTrigger value="medical">Medical</TabsTrigger>
+        <TabsTrigger value="contact">Contact</TabsTrigger>
+        <TabsTrigger value="address">Address</TabsTrigger>
+      </TabsList>
 
-      <TabPanels>
-        {/* General Tab */}
-        <TabPanel>
-          <VStack spacing={4} align="start">
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Student ID
-              </Text>
-              <Text fontSize="lg">{student.studentId}</Text>
-            </Box>
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Full Name
-              </Text>
-              <Text fontSize="lg">
-                {student.firstName} {student.lastName}
-              </Text>
-            </Box>
-            <HStack spacing={4} w="100%">
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Date of Birth
-                </Text>
-                <Text>{new Date(student.dateOfBirth).toLocaleDateString()}</Text>
-              </Box>
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Gender
-                </Text>
-                <Text>{student.gender || '-'}</Text>
-              </Box>
-            </HStack>
-            <HStack spacing={4} w="100%">
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Blood Group
-                </Text>
-                <Badge colorScheme="red">{student.bloodGroup || '-'}</Badge>
-              </Box>
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Status
-                </Text>
-                <Badge colorScheme={student.status === 'active' ? 'green' : 'gray'}>
-                  {student.status}
-                </Badge>
-              </Box>
-            </HStack>
-            <HStack spacing={4} w="100%">
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Class
-                </Text>
-                <Text>{student.class || '-'}</Text>
-              </Box>
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  Section
-                </Text>
-                <Text>{student.section || '-'}</Text>
-              </Box>
-            </HStack>
-          </VStack>
-        </TabPanel>
-
-        {/* Parent Tab */}
-        <TabPanel>
-          <VStack spacing={4} align="start">
-            <HStack justify="space-between" w="100%">
-              <Heading size="sm">Parent/Guardian Details</Heading>
-              {!isEditingParent && parent && (
-                <Button size="sm" colorScheme="blue" onClick={startEditParent}>
-                  Edit Parent
-                </Button>
+      {/* General Tab */}
+      <TabsContent value="general">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Student ID</p>
+            <p className="text-base text-gray-900">{student.studentId}</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Full Name</p>
+            <p className="text-base text-gray-900">
+              {student.firstName} {student.lastName}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Date of Birth</p>
+              <p className="text-sm text-gray-900">
+                {new Date(student.dateOfBirth).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Gender</p>
+              <p className="text-sm text-gray-900">{student.gender || '-'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Blood Group</p>
+              {student.bloodGroup ? (
+                <Badge color="red">{student.bloodGroup}</Badge>
+              ) : (
+                <p className="text-sm text-gray-400">-</p>
               )}
-            </HStack>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Status</p>
+              <Badge color={student.status === 'active' ? 'green' : 'gray'}>
+                {student.status}
+              </Badge>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Class</p>
+              <p className="text-sm text-gray-900">{student.class || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-500">Section</p>
+              <p className="text-sm text-gray-900">{student.section || '-'}</p>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
 
-            {!parent ? (
-              <Text color="gray.500">No parent linked to this student</Text>
-            ) : isEditingParent ? (
-              <VStack spacing={4} w="100%">
-                <SimpleGrid columns={2} spacing={4} w="100%">
-                  <FormControl>
-                    <FormLabel>First Name</FormLabel>
-                    <Input
-                      value={parentForm.firstName}
-                      onChange={(e) => setParentForm({ ...parentForm, firstName: e.target.value })}
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Last Name</FormLabel>
-                    <Input
-                      value={parentForm.lastName}
-                      onChange={(e) => setParentForm({ ...parentForm, lastName: e.target.value })}
-                    />
-                  </FormControl>
-                </SimpleGrid>
-                <FormControl>
-                  <FormLabel>Email (not editable)</FormLabel>
-                  <Input value={parent.email || ''} isDisabled />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Phone</FormLabel>
-                  <Input
-                    value={parentForm.phone}
-                    onChange={(e) => setParentForm({ ...parentForm, phone: e.target.value })}
-                  />
-                </FormControl>
-                <HStack>
-                  <Button colorScheme="blue" onClick={saveParent} isLoading={updateParentMutation.isPending}>
-                    Save
-                  </Button>
-                  <Button variant="ghost" onClick={() => setIsEditingParent(false)}>
-                    Cancel
-                  </Button>
-                </HStack>
-              </VStack>
-            ) : (
-              <>
-                <SimpleGrid columns={2} spacing={4} w="100%">
-                  <Box>
-                    <Text fontWeight="bold" color="gray.500" mb={1}>First Name</Text>
-                    <Text>{parent.firstName || '-'}</Text>
-                  </Box>
-                  <Box>
-                    <Text fontWeight="bold" color="gray.500" mb={1}>Last Name</Text>
-                    <Text>{parent.lastName || '-'}</Text>
-                  </Box>
-                </SimpleGrid>
-                <Box w="100%">
-                  <Text fontWeight="bold" color="gray.500" mb={1}>Email</Text>
-                  <Text>{parent.email || '-'}</Text>
-                </Box>
-                <Box w="100%">
-                  <Text fontWeight="bold" color="gray.500" mb={1}>Phone</Text>
-                  <Text>{parent.phone || '-'}</Text>
-                </Box>
-              </>
+      {/* Parent Tab */}
+      <TabsContent value="parent">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">Parent/Guardian Details</h3>
+            {!isEditingParent && parent && (
+              <Button size="sm" onClick={startEditParent}>
+                Edit Parent
+              </Button>
             )}
-          </VStack>
-        </TabPanel>
+          </div>
 
-        {/* Medical Tab */}
-        <TabPanel>
-          <VStack spacing={5} align="start">
-            {/* Allergies */}
-            <Box w="100%">
-              <Heading size="sm" mb={2}>
-                Allergies
-              </Heading>
-              {student.medicalInfo?.allergies && student.medicalInfo.allergies.length > 0 ? (
-                <HStack spacing={2} wrap="wrap">
-                  {student.medicalInfo.allergies.map((allergy, idx) => (
-                    <Badge key={idx} colorScheme="red">
-                      {allergy}
-                    </Badge>
-                  ))}
-                </HStack>
-              ) : (
-                <Text color="gray.500">No allergies recorded</Text>
-              )}
-            </Box>
+          {!parent ? (
+            <p className="text-sm text-gray-500">No parent linked to this student</p>
+          ) : isEditingParent ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="First Name"
+                  value={parentForm.firstName}
+                  onChange={(e) => setParentForm({ ...parentForm, firstName: e.target.value })}
+                />
+                <Input
+                  label="Last Name"
+                  value={parentForm.lastName}
+                  onChange={(e) => setParentForm({ ...parentForm, lastName: e.target.value })}
+                />
+              </div>
+              <Input label="Email (not editable)" value={parent.email || ''} disabled />
+              <Input
+                label="Phone"
+                value={parentForm.phone}
+                onChange={(e) => setParentForm({ ...parentForm, phone: e.target.value })}
+              />
+              <div className="flex items-center gap-3">
+                <Button onClick={saveParent} loading={updateParentMutation.isPending}>
+                  Save
+                </Button>
+                <Button variant="ghost" onClick={() => setIsEditingParent(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500">First Name</p>
+                  <p className="text-sm text-gray-900">{parent.firstName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-500">Last Name</p>
+                  <p className="text-sm text-gray-900">{parent.lastName || '-'}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500">Email</p>
+                <p className="text-sm text-gray-900">{parent.email || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-500">Phone</p>
+                <p className="text-sm text-gray-900">{parent.phone || '-'}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </TabsContent>
 
-            <Divider />
+      {/* Medical Tab */}
+      <TabsContent value="medical">
+        <div className="space-y-5">
+          {/* Allergies */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Allergies</h4>
+            {student.medicalInfo?.allergies && student.medicalInfo.allergies.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {student.medicalInfo.allergies.map((allergy, idx) => (
+                  <Badge key={idx} color="red">
+                    {allergy}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No allergies recorded</p>
+            )}
+          </div>
 
-            {/* Medical Conditions */}
-            <Box w="100%">
-              <Heading size="sm" mb={2}>
-                Medical Conditions
-              </Heading>
-              {student.medicalInfo?.medicalConditions &&
-              student.medicalInfo.medicalConditions.length > 0 ? (
-                <HStack spacing={2} wrap="wrap">
-                  {student.medicalInfo.medicalConditions.map((condition, idx) => (
-                    <Badge key={idx} colorScheme="orange">
-                      {condition}
-                    </Badge>
-                  ))}
-                </HStack>
-              ) : (
-                <Text color="gray.500">No medical conditions recorded</Text>
-              )}
-            </Box>
+          <hr className="border-gray-200" />
 
-            <Divider />
+          {/* Medical Conditions */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Medical Conditions</h4>
+            {student.medicalInfo?.medicalConditions &&
+            student.medicalInfo.medicalConditions.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {student.medicalInfo.medicalConditions.map((condition, idx) => (
+                  <Badge key={idx} color="orange">
+                    {condition}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No medical conditions recorded</p>
+            )}
+          </div>
 
-            {/* Medications */}
-            <Box w="100%">
-              <Heading size="sm" mb={2}>
-                Current Medications
-              </Heading>
-              {student.medicalInfo?.medications && student.medicalInfo.medications.length > 0 ? (
-                <HStack spacing={2} wrap="wrap">
-                  {student.medicalInfo.medications.map((medication, idx) => (
-                    <Badge key={idx} colorScheme="green">
-                      {medication}
-                    </Badge>
-                  ))}
-                </HStack>
-              ) : (
-                <Text color="gray.500">No medications recorded</Text>
-              )}
-            </Box>
+          <hr className="border-gray-200" />
 
-            <Divider />
+          {/* Medications */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Current Medications</h4>
+            {student.medicalInfo?.medications && student.medicalInfo.medications.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {student.medicalInfo.medications.map((medication, idx) => (
+                  <Badge key={idx} color="green">
+                    {medication}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No medications recorded</p>
+            )}
+          </div>
 
-            {/* Special Needs */}
-            <Box w="100%">
-              <Heading size="sm" mb={2}>
-                Special Needs / Notes
-              </Heading>
-              <Text whiteSpace="pre-wrap" color={student.medicalInfo?.specialNeeds ? 'black' : 'gray.500'}>
-                {student.medicalInfo?.specialNeeds || 'No special needs recorded'}
-              </Text>
-            </Box>
-          </VStack>
-        </TabPanel>
+          <hr className="border-gray-200" />
 
-        {/* Contact Tab */}
-        <TabPanel>
-          <VStack spacing={4} align="start">
-            <Heading size="sm">Emergency Contact</Heading>
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Name
-              </Text>
-              <Text>{student.emergencyContact?.name || '-'}</Text>
-            </Box>
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Relation
-              </Text>
-              <Text>{student.emergencyContact?.relation || '-'}</Text>
-            </Box>
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Phone
-              </Text>
-              <Text>{student.emergencyContact?.phone || '-'}</Text>
-            </Box>
-          </VStack>
-        </TabPanel>
+          {/* Special Needs */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Special Needs / Notes</h4>
+            <p className={`text-sm whitespace-pre-wrap ${student.medicalInfo?.specialNeeds ? 'text-gray-900' : 'text-gray-500'}`}>
+              {student.medicalInfo?.specialNeeds || 'No special needs recorded'}
+            </p>
+          </div>
+        </div>
+      </TabsContent>
 
-        {/* Address Tab */}
-        <TabPanel>
-          <VStack spacing={4} align="start">
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Street
-              </Text>
-              <Text>{student.address?.street || '-'}</Text>
-            </Box>
-            <HStack spacing={4} w="100%">
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  City
-                </Text>
-                <Text>{student.address?.city || '-'}</Text>
-              </Box>
-              <Box flex={1}>
-                <Text fontWeight="bold" color="gray.500" mb={1}>
-                  State
-                </Text>
-                <Text>{student.address?.state || '-'}</Text>
-              </Box>
-            </HStack>
-            <Box w="100%">
-              <Text fontWeight="bold" color="gray.500" mb={1}>
-                Zip Code
-              </Text>
-              <Text>{student.address?.zipCode || '-'}</Text>
-            </Box>
-          </VStack>
-        </TabPanel>
-      </TabPanels>
+      {/* Contact Tab */}
+      <TabsContent value="contact">
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-gray-900">Emergency Contact</h3>
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Name</p>
+            <p className="text-sm text-gray-900">{student.emergencyContact?.name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Relation</p>
+            <p className="text-sm text-gray-900">{student.emergencyContact?.relation || '-'}</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Phone</p>
+            <p className="text-sm text-gray-900">{student.emergencyContact?.phone || '-'}</p>
+          </div>
+        </div>
+      </TabsContent>
+
+      {/* Address Tab */}
+      <TabsContent value="address">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Street</p>
+            <p className="text-sm text-gray-900">{student.address?.street || '-'}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-500">City</p>
+              <p className="text-sm text-gray-900">{student.address?.city || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-500">State</p>
+              <p className="text-sm text-gray-900">{student.address?.state || '-'}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-500">Zip Code</p>
+            <p className="text-sm text-gray-900">{student.address?.zipCode || '-'}</p>
+          </div>
+        </div>
+      </TabsContent>
     </Tabs>
   );
 };

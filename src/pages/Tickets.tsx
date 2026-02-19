@@ -1,25 +1,15 @@
-import {
-  Box,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Button,
-  HStack,
-  Spinner,
-  Center,
-  Select,
-  Text,
-} from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import { ticketsApi } from '../services/api';
 import { Ticket } from '../types';
+import { Button } from '../components/ui/Button';
+import { Select } from '../components/ui/Select';
+import { Badge } from '../components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { LoadingPage } from '../components/ui/Spinner';
+import { Card } from '../components/ui/Card';
 
 const statusColors: Record<string, string> = {
   open: 'yellow',
@@ -48,36 +38,36 @@ export const Tickets = () => {
   });
 
   if (isLoading) {
-    return (
-      <Center h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Center>
-    );
+    return <LoadingPage />;
   }
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={6}>
-        <Heading size="lg">Support Tickets</Heading>
-        <Select maxW="200px" value={filter} onChange={(e) => setFilter(e.target.value)}>
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
+        <Select
+          className="w-full sm:w-[200px]"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
           <option value="">All Status</option>
           <option value="open">Open</option>
           <option value="in_progress">In Progress</option>
           <option value="resolved">Resolved</option>
           <option value="closed">Closed</option>
         </Select>
-      </HStack>
+      </div>
 
-      <Box bg="white" borderRadius="lg" shadow="sm" p={4}>
-        <Table variant="simple">
+      <Card padding={false}>
+        <Table>
           <Thead>
             <Tr>
               <Th>Ticket #</Th>
               <Th>Subject</Th>
-              <Th>Category</Th>
+              <Th className="hidden md:table-cell">Category</Th>
               <Th>Priority</Th>
               <Th>Status</Th>
-              <Th>Created</Th>
+              <Th className="hidden sm:table-cell">Created</Th>
               <Th>Actions</Th>
             </Tr>
           </Thead>
@@ -85,29 +75,43 @@ export const Tickets = () => {
             {tickets?.map((ticket) => (
               <Tr key={ticket._id}>
                 <Td>
-                  <Text fontWeight="medium">{ticket.ticketNumber}</Text>
+                  <span className="font-medium text-gray-900">{ticket.ticketNumber}</span>
                 </Td>
                 <Td>{ticket.subject}</Td>
-                <Td>{ticket.category}</Td>
+                <Td className="hidden md:table-cell">{ticket.category}</Td>
                 <Td>
-                  <Badge colorScheme={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
+                  <Badge color={priorityColors[ticket.priority]}>{ticket.priority}</Badge>
                 </Td>
                 <Td>
-                  <Badge colorScheme={statusColors[ticket.status]}>
+                  <Badge color={statusColors[ticket.status]}>
                     {ticket.status.replace('_', ' ')}
                   </Badge>
                 </Td>
-                <Td>{new Date(ticket.createdAt).toLocaleDateString()}</Td>
+                <Td className="hidden sm:table-cell">
+                  {new Date(ticket.createdAt).toLocaleDateString()}
+                </Td>
                 <Td>
-                  <Button size="sm" variant="ghost" onClick={() => navigate(`/tickets/${ticket._id}`)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Eye className="h-4 w-4" />}
+                    onClick={() => navigate(`/tickets/${ticket._id}`)}
+                  >
                     View
                   </Button>
                 </Td>
               </Tr>
             ))}
+            {tickets?.length === 0 && (
+              <Tr>
+                <Td colSpan={7}>
+                  <div className="py-8 text-center text-gray-500">No tickets found</div>
+                </Td>
+              </Tr>
+            )}
           </Tbody>
         </Table>
-      </Box>
-    </Box>
+      </Card>
+    </div>
   );
 };

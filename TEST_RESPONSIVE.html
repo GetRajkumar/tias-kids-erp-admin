@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tailwind Responsive Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="p-4 md:p-6 bg-blue-100">
+    <h1 class="text-xl md:text-2xl">Responsive Test</h1>
+    <p>If padding changes at 768px, classes work!</p>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+      <div class="bg-red-200 p-4">1</div>
+      <div class="bg-green-200 p-4">2</div>
+      <div class="bg-blue-200 p-4">3</div>
+      <div class="bg-yellow-200 p-4">4</div>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+      <div class="bg-purple-200 p-4 flex-1">Column on mobile</div>
+      <div class="bg-pink-200 p-4 flex-1">Row on desktop</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,88 +1,124 @@
-import { Box, VStack, Text, Icon, Flex, Divider } from '@chakra-ui/react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  FiHome,
-  FiUsers,
-  FiUserPlus,
-  FiCalendar,
-  FiDollarSign,
-  FiCreditCard,
-  FiMessageSquare,
-  FiSettings,
-  FiBell,
-  FiBook,
-} from 'react-icons/fi';
+  Home,
+  Users,
+  UserPlus,
+  Calendar,
+  DollarSign,
+  CreditCard,
+  MessageSquare,
+  Settings,
+  Bell,
+  BookOpen,
+  Layers,
+  X,
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { useAuth } from '../../hooks/useAuth';
+import { useTenant } from '../../contexts/TenantContext';
+
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
 
 const menuItems = [
-  { icon: FiHome, label: 'Dashboard', path: '/' },
-  { icon: FiUsers, label: 'Students', path: '/students' },
-  { icon: FiUserPlus, label: 'Admissions', path: '/admissions' },
-  { icon: FiCalendar, label: 'Attendance', path: '/attendance' },
-  { icon: FiBook, label: 'Homework', path: '/homework' },
-  { icon: FiCreditCard, label: 'Fee Schedules', path: '/payment-schedules' },
-  { icon: FiDollarSign, label: 'Payments', path: '/payments' },
-  { icon: FiMessageSquare, label: 'Tickets', path: '/tickets' },
-  { icon: FiBell, label: 'Announcements', path: '/announcements' },
+  { icon: Home, label: 'Dashboard', path: '/', pageKey: 'dashboard' },
+  { icon: Users, label: 'Students', path: '/students', pageKey: 'students' },
+  { icon: UserPlus, label: 'Admissions', path: '/admissions', pageKey: 'admissions' },
+  { icon: Calendar, label: 'Attendance', path: '/attendance', pageKey: 'attendance' },
+  { icon: BookOpen, label: 'Homework', path: '/homework', pageKey: 'homework' },
+  { icon: CreditCard, label: 'Fee Schedules', path: '/payment-schedules', pageKey: 'payment-schedules' },
+  { icon: DollarSign, label: 'Payments', path: '/payments', pageKey: 'payments' },
+  { icon: MessageSquare, label: 'Tickets', path: '/tickets', pageKey: 'tickets' },
+  { icon: Bell, label: 'Announcements', path: '/announcements', pageKey: 'announcements' },
 ];
 
-export const Sidebar = () => {
+const superAdminItems = [
+  { icon: Layers, label: 'Tenants', path: '/tenants', pageKey: 'tenants' },
+];
+
+export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const location = useLocation();
+  const { isSuperAdmin } = useAuth();
+  const { schoolName, allowedPages } = useTenant();
+
+  const allItems = isSuperAdmin
+    ? [...superAdminItems, ...menuItems]
+    : menuItems;
+
+  const visibleItems = allowedPages.length > 0
+    ? allItems.filter((item) => allowedPages.includes(item.pageKey))
+    : allItems;
+
+  const showSettings = isSuperAdmin || allowedPages.includes('settings');
 
   return (
-    <Box
-      w="250px"
-      bg="white"
-      borderRight="1px"
-      borderColor="gray.200"
-      h="100vh"
-      position="fixed"
-      left={0}
-      top={0}
-      py={2}
+    <aside
+      className={cn(
+        'fixed left-0 top-0 z-40 h-full w-64 border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out',
+        open ? 'translate-x-0' : '-translate-x-full',
+        'lg:translate-x-0',
+      )}
     >
-      <Flex px={6} py={4} align="center">
-        <Text fontSize="xl" fontWeight="bold" color="brand.500">
-          Good Day
-        </Text>
-      </Flex>
-      <Divider />
-      <VStack spacing={1} align="stretch" mt={4} px={3}>
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link key={item.path} to={item.path}>
-              <Flex
-                align="center"
-                px={4}
-                py={3}
-                borderRadius="md"
-                bg={isActive ? 'brand.50' : 'transparent'}
-                color={isActive ? 'brand.600' : 'gray.600'}
-                _hover={{ bg: 'brand.50', color: 'brand.600' }}
-                transition="all 0.2s"
+      {/* Header */}
+      <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
+        <span className="text-xl font-bold text-brand-500 truncate">
+          {schoolName}
+        </span>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex flex-col justify-between h-[calc(100%-4rem)]">
+        <div className="space-y-1 px-3 pt-4 overflow-y-auto">
+          {visibleItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-brand-50 text-brand-600'
+                    : 'text-gray-600 hover:bg-brand-50 hover:text-brand-600',
+                )}
               >
-                <Icon as={item.icon} mr={3} boxSize={5} />
-                <Text fontWeight={isActive ? '600' : '400'}>{item.label}</Text>
-              </Flex>
+                <Icon className="h-5 w-5 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Settings at bottom */}
+        {showSettings && (
+          <div className="border-t border-gray-200 px-3 py-4">
+            <Link
+              to="/settings"
+              onClick={onClose}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors',
+                location.pathname === '/settings'
+                  ? 'bg-brand-50 text-brand-600'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+              )}
+            >
+              <Settings className="h-5 w-5 shrink-0" />
+              <span>Settings</span>
             </Link>
-          );
-        })}
-      </VStack>
-      <Box position="absolute" bottom={4} left={0} right={0} px={3}>
-        <Link to="/settings">
-          <Flex
-            align="center"
-            px={4}
-            py={3}
-            borderRadius="md"
-            color="gray.600"
-            _hover={{ bg: 'gray.100' }}
-          >
-            <Icon as={FiSettings} mr={3} boxSize={5} />
-            <Text>Settings</Text>
-          </Flex>
-        </Link>
-      </Box>
-    </Box>
+          </div>
+        )}
+      </nav>
+    </aside>
   );
 };

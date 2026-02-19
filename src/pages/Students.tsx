@@ -1,46 +1,24 @@
-import {
-  Box,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Button,
-  HStack,
-  Input,
-  InputGroup,
-  InputLeftElement,
-  Spinner,
-  Center,
-  Avatar,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  VStack,
-  useToast,
-  Text,
-} from '@chakra-ui/react';
-import { FiSearch, FiPlus, FiEdit2, FiEye } from 'react-icons/fi';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, Plus, Eye } from 'lucide-react';
 import { studentsApi } from '../services/api';
 import { Student } from '../types';
 import { StudentForm } from '../components/students/StudentForm';
 import { StudentDetailModal } from '../components/students/StudentDetailModal';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Avatar } from '../components/ui/Avatar';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { Sheet } from '../components/ui/Sheet';
+import { LoadingPage } from '../components/ui/Spinner';
+import { toast } from '../components/ui/toast';
 
 export const Students = () => {
   const [search, setSearch] = useState('');
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | undefined>();
-  const toast = useToast();
   const queryClient = useQueryClient();
 
   const { data: students, isLoading } = useQuery<Student[]>({
@@ -56,7 +34,7 @@ export const Students = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       toast({ title: 'Student created successfully', status: 'success' });
-      onClose();
+      setCreateOpen(false);
     },
     onError: (error: any) => {
       toast({
@@ -76,48 +54,44 @@ export const Students = () => {
 
   const handleViewStudent = (id: string) => {
     setSelectedStudentId(id);
-    onDetailOpen();
+    setDetailOpen(true);
   };
 
   const onSubmit = (data: any) => createMutation.mutate(data);
 
   if (isLoading) {
-    return (
-      <Center h="400px">
-        <Spinner size="xl" color="brand.500" />
-      </Center>
-    );
+    return <LoadingPage />;
   }
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={6}>
-        <Heading size="lg">Students</Heading>
-        <Button leftIcon={<FiPlus />} colorScheme="blue" onClick={onOpen}>
+    <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setCreateOpen(true)}>
           Add Student
         </Button>
-      </HStack>
+      </div>
 
-      <Box bg="white" borderRadius="lg" shadow="sm" p={4}>
-        <InputGroup mb={4} maxW="300px">
-          <InputLeftElement>
-            <FiSearch color="gray.400" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search students..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </InputGroup>
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="p-4">
+          <div className="max-w-sm">
+            <Input
+              placeholder="Search students..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              icon={<Search className="h-4 w-4" />}
+            />
+          </div>
+        </div>
 
-        <Table variant="simple">
-          <Thead bg="gray.50">
+        <Table>
+          <Thead>
             <Tr>
               <Th>Student</Th>
               <Th>Student ID</Th>
-              <Th>Class</Th>
-              <Th>Gender</Th>
-              <Th>Blood Group</Th>
+              <Th className="hidden md:table-cell">Class</Th>
+              <Th className="hidden lg:table-cell">Gender</Th>
+              <Th className="hidden lg:table-cell">Blood Group</Th>
               <Th>Status</Th>
               <Th>Actions</Th>
             </Tr>
@@ -125,78 +99,80 @@ export const Students = () => {
           <Tbody>
             {filteredStudents && filteredStudents.length > 0 ? (
               filteredStudents.map((student) => (
-                <Tr key={student._id} _hover={{ bg: 'gray.50' }}>
+                <Tr key={student._id}>
                   <Td>
-                    <HStack>
+                    <div className="flex items-center gap-3">
                       <Avatar size="sm" name={`${student.firstName} ${student.lastName}`} />
-                      <Box>
-                        <Text fontWeight="medium">{student.firstName} {student.lastName}</Text>
-                        <Text fontSize="sm" color="gray.500">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : '-'}</Text>
-                      </Box>
-                    </HStack>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {student.firstName} {student.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {student.dateOfBirth
+                            ? new Date(student.dateOfBirth).toLocaleDateString()
+                            : '-'}
+                        </p>
+                      </div>
+                    </div>
                   </Td>
                   <Td>{student.studentId}</Td>
-                  <Td>{student.class || '-'}</Td>
-                  <Td>{student.gender || '-'}</Td>
-                  <Td>
+                  <Td className="hidden md:table-cell">{student.class || '-'}</Td>
+                  <Td className="hidden lg:table-cell">{student.gender || '-'}</Td>
+                  <Td className="hidden lg:table-cell">
                     {student.bloodGroup ? (
-                      <Badge colorScheme="red">{student.bloodGroup}</Badge>
+                      <Badge color="red">{student.bloodGroup}</Badge>
                     ) : (
-                      <Text color="gray.400">-</Text>
+                      <span className="text-gray-400">-</span>
                     )}
                   </Td>
                   <Td>
-                    <Badge colorScheme={student.status === 'active' ? 'green' : 'gray'}>
+                    <Badge color={student.status === 'active' ? 'green' : 'gray'}>
                       {student.status}
                     </Badge>
                   </Td>
                   <Td>
-                    <HStack spacing={2}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="blue"
-                        leftIcon={<FiEye />}
-                        onClick={() => handleViewStudent(student._id)}
-                      >
-                        View
-                      </Button>
-                    </HStack>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Eye className="h-4 w-4" />}
+                      onClick={() => handleViewStudent(student._id)}
+                    >
+                      View
+                    </Button>
                   </Td>
                 </Tr>
               ))
             ) : (
               <Tr>
-                <Td colSpan={7} textAlign="center" py={8}>
-                  <Text color="gray.500">No students found</Text>
+                <Td colSpan={7} className="text-center py-8">
+                  <p className="text-gray-500">No students found</p>
                 </Td>
               </Tr>
             )}
           </Tbody>
         </Table>
-      </Box>
+      </div>
 
-      {/* Create Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="2xl">
-        <ModalOverlay />
-        <ModalContent maxH="90vh" overflowY="auto">
-          <ModalHeader>Add New Student</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <StudentForm
-              onSubmit={onSubmit}
-              isLoading={createMutation.isPending}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      {/* Create Student Sheet */}
+      <Sheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        side="right"
+        size="lg"
+        title="Add New Student"
+      >
+        <StudentForm
+          onSubmit={onSubmit}
+          isLoading={createMutation.isPending}
+        />
+      </Sheet>
 
-      {/* Detail/Edit Modal */}
+      {/* Student Detail Sheet */}
       <StudentDetailModal
-        isOpen={isDetailOpen}
-        onClose={onDetailClose}
+        isOpen={detailOpen}
+        onClose={() => setDetailOpen(false)}
         studentId={selectedStudentId}
       />
-    </Box>
+    </div>
   );
 };
