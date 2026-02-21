@@ -1,9 +1,10 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import ReactSelect from 'react-select';
 import { AlertCircle, Info } from 'lucide-react';
 import { admissionsApi, tenantApi } from '../services/api';
 import { toast } from '../components/ui/toast';
@@ -13,6 +14,7 @@ import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { Card } from '../components/ui/Card';
 import { LoadingPage } from '../components/ui/Spinner';
+import { indianStates, getCitiesByState } from '../data/indianLocations';
 
 const admissionSchema = z.object({
   childFirstName: z.string().min(2, 'First name is required'),
@@ -28,7 +30,7 @@ const admissionSchema = z.object({
     street: z.string().min(1, 'Street address is required'),
     city: z.string().min(1, 'City is required'),
     state: z.string().min(1, 'State is required'),
-    zipCode: z.string().min(1, 'ZIP code is required'),
+    zipCode: z.string().optional(),
   }),
   preferredClass: z.string().min(1, 'Please select a class'),
   academicYear: z.string().min(1, 'Please select academic year'),
@@ -51,9 +53,51 @@ export const AdmissionEnquiry = () => {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
+    watch,
+    setValue,
   } = useForm<AdmissionForm>({
     resolver: zodResolver(admissionSchema),
   });
+
+  const selectedState = watch('address.state');
+
+  const stateOptions = useMemo(
+    () => indianStates.map((s) => ({ value: s, label: s })),
+    []
+  );
+
+  const cityOptions = useMemo(
+    () => getCitiesByState(selectedState || '').map((c) => ({ value: c, label: c })),
+    [selectedState]
+  );
+
+  const selectStyles = {
+    control: (base: any, state: any) => ({
+      ...base,
+      borderColor: state.isFocused ? '#4F46E5' : '#d1d5db',
+      boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : 'none',
+      borderRadius: '0.5rem',
+      minHeight: '40px',
+      fontSize: '0.875rem',
+      '&:hover': { borderColor: state.isFocused ? '#4F46E5' : '#9ca3af' },
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#4F46E5' : state.isFocused ? '#EEF2FF' : 'white',
+      color: state.isSelected ? 'white' : '#111827',
+      fontSize: '0.875rem',
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: '#9ca3af',
+      fontSize: '0.875rem',
+    }),
+    menu: (base: any) => ({
+      ...base,
+      zIndex: 50,
+    }),
+  };
 
   const mutation = useMutation({
     mutationFn: (data: AdmissionForm) =>
@@ -291,26 +335,62 @@ export const AdmissionEnquiry = () => {
                     required
                   />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input
-                      label="City"
-                      {...register('address.city')}
-                      placeholder="City"
-                      error={errors.address?.city?.message}
-                      required
-                    />
-                    <Input
-                      label="State"
-                      {...register('address.state')}
-                      placeholder="State"
-                      error={errors.address?.state?.message}
-                      required
-                    />
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                        State <span className="text-red-500">*</span>
+                      </label>
+                      <Controller
+                        name="address.state"
+                        control={control}
+                        render={({ field }) => (
+                          <ReactSelect
+                            options={stateOptions}
+                            value={stateOptions.find((o) => o.value === field.value) || null}
+                            onChange={(option) => {
+                              field.onChange(option?.value || '');
+                              setValue('address.city', '');
+                            }}
+                            placeholder="Search state..."
+                            isClearable
+                            isSearchable
+                            styles={selectStyles}
+                          />
+                        )}
+                      />
+                      {errors.address?.state?.message && (
+                        <p className="mt-1 text-xs text-red-500">{errors.address.state.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <Controller
+                        name="address.city"
+                        control={control}
+                        render={({ field }) => (
+                          <ReactSelect
+                            options={cityOptions}
+                            value={cityOptions.find((o) => o.value === field.value) || null}
+                            onChange={(option) => field.onChange(option?.value || '')}
+                            placeholder={selectedState ? 'Search city...' : 'Select state first'}
+                            isClearable
+                            isSearchable
+                            isDisabled={!selectedState}
+                            noOptionsMessage={() => selectedState ? 'No cities found' : 'Select a state first'}
+                            styles={selectStyles}
+                          />
+                        )}
+                      />
+                      {errors.address?.city?.message && (
+                        <p className="mt-1 text-xs text-red-500">{errors.address.city.message}</p>
+                      )}
+                    </div>
                     <Input
                       label="ZIP Code"
                       {...register('address.zipCode')}
-                      placeholder="ZIP Code"
+                      placeholder="ZIP Code (optional)"
                       error={errors.address?.zipCode?.message}
-                      required
                     />
                   </div>
                 </div>

@@ -11,6 +11,7 @@ import {
   Bell,
   BookOpen,
   Layers,
+  SlidersHorizontal,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const menuItems: MenuItem[] = [
 
 const superAdminItems: MenuItem[] = [
   { icon: Layers, label: 'Tenants', path: '/tenants', pageKey: 'tenants' },
+  { icon: SlidersHorizontal, label: 'Manage Tenants', path: '/tenant-manage', pageKey: 'tenant-manage' },
 ];
 
 const navLinkClass = (isActive: boolean) =>

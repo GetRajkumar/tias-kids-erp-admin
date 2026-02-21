@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Bell, LogOut, User, Menu, KeyRound } from 'lucide-react';
+import { Bell, LogOut, User, Menu, KeyRound, Building2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
+import { useTenant } from '../../contexts/TenantContext';
 import { AppDispatch } from '../../store';
 import { Avatar } from '../ui/Avatar';
 import { Modal } from '../ui/Modal';
@@ -26,7 +27,8 @@ interface HeaderProps {
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { adminTenants, adminSelectedTenantId, setAdminSelectedTenantId } = useTenant();
 
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -82,6 +84,23 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <span className="text-lg font-semibold text-gray-700">
             Admin Portal
           </span>
+          {isSuperAdmin && adminTenants.length > 0 && (
+            <div className="flex items-center gap-2 ml-2">
+              <Building2 className="h-4 w-4 text-gray-400 hidden sm:block" />
+              <select
+                value={adminSelectedTenantId}
+                onChange={(e) => setAdminSelectedTenantId(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:border-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 max-w-[220px]"
+              >
+                <option value="">-- Select School --</option>
+                {adminTenants.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} {!t.isActive ? ' [Inactive]' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Right side */}

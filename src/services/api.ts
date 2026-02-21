@@ -10,6 +10,8 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  const adminTenantId = localStorage.getItem('adminSelectedTenantId');
+  if (adminTenantId) config.headers['X-Tenant-Id'] = adminTenantId;
   return config;
 });
 
@@ -48,6 +50,8 @@ export const tenantApi = {
   create: (data: any) => api.post('/tenants', data),
   update: (id: string, data: any) => api.patch(`/tenants/${id}`, data),
   delete: (id: string) => api.delete(`/tenants/${id}`),
+  getSettingsById: (id: string) => api.get(`/tenants/${id}/settings`),
+  updateSettingsById: (id: string, data: any) => api.patch(`/tenants/${id}/settings`, data),
   getUsers: () => api.get('/tenants/users'),
   addUser: (data: any) => api.post('/tenants/users', data),
   updateUserRole: (userId: string, role: string) =>

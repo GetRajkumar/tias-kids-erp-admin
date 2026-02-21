@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Student } from '../../types';
+import { useTenant } from '../../contexts/TenantContext';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
@@ -16,6 +17,8 @@ interface StudentFormProps {
 }
 
 export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFormProps) => {
+  const { classes, sections } = useTenant();
+
   const formatDateForInput = (date: string | undefined): string => {
     if (!date) return '';
     const d = new Date(date);
@@ -154,15 +157,15 @@ export const StudentForm = ({ student, onSubmit, isLoading, isEdit }: StudentFor
           </Select>
           <Select label="Class" {...register('class')}>
             <option value="">Select class</option>
-            <option value="Nursery">Nursery</option>
-            <option value="LKG">LKG</option>
-            <option value="UKG">UKG</option>
+            {classes.map((cls) => (
+              <option key={cls} value={cls}>{cls}</option>
+            ))}
           </Select>
           <Select label="Section" {...register('section')}>
             <option value="">Select section</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
+            {sections.map((sec) => (
+              <option key={sec} value={sec}>{sec}</option>
+            ))}
           </Select>
         </div>
       </div>
