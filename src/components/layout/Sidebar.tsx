@@ -12,6 +12,7 @@ import {
   BookOpen,
   Layers,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
@@ -22,7 +23,14 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const menuItems = [
+interface MenuItem {
+  icon: LucideIcon;
+  label: string;
+  path: string;
+  pageKey: string;
+}
+
+const menuItems: MenuItem[] = [
   { icon: Home, label: 'Dashboard', path: '/', pageKey: 'dashboard' },
   { icon: Users, label: 'Students', path: '/students', pageKey: 'students' },
   { icon: UserPlus, label: 'Admissions', path: '/admissions', pageKey: 'admissions' },
@@ -34,22 +42,27 @@ const menuItems = [
   { icon: Bell, label: 'Announcements', path: '/announcements', pageKey: 'announcements' },
 ];
 
-const superAdminItems = [
+const superAdminItems: MenuItem[] = [
   { icon: Layers, label: 'Tenants', path: '/tenants', pageKey: 'tenants' },
 ];
+
+const navLinkClass = (isActive: boolean) =>
+  cn(
+    'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors',
+    isActive ? 'bg-brand-50 text-brand-600' : 'text-gray-600 hover:bg-brand-50 hover:text-brand-600',
+  );
 
 export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const location = useLocation();
   const { isSuperAdmin } = useAuth();
   const { schoolName, allowedPages } = useTenant();
 
-  const allItems = isSuperAdmin
-    ? [...superAdminItems, ...menuItems]
-    : menuItems;
+  const allItems = isSuperAdmin ? [...superAdminItems, ...menuItems] : menuItems;
 
-  const visibleItems = allowedPages.length > 0
-    ? allItems.filter((item) => allowedPages.includes(item.pageKey))
-    : allItems;
+  const visibleItems =
+    allowedPages.length > 0
+      ? allItems.filter((item) => allowedPages.includes(item.pageKey))
+      : allItems;
 
   const showSettings = isSuperAdmin || allowedPages.includes('settings');
 
@@ -61,11 +74,8 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
         'lg:translate-x-0',
       )}
     >
-      {/* Header */}
       <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
-        <span className="text-xl font-bold text-brand-500 truncate">
-          {schoolName}
-        </span>
+        <span className="text-xl font-bold text-brand-500 truncate">{schoolName}</span>
         <button
           onClick={onClose}
           className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
@@ -75,43 +85,27 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex flex-col justify-between h-[calc(100%-4rem)]">
         <div className="space-y-1 px-3 pt-4 overflow-y-auto">
-          {visibleItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={onClose}
-                className={cn(
-                  'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-brand-50 text-brand-600'
-                    : 'text-gray-600 hover:bg-brand-50 hover:text-brand-600',
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {visibleItems.map(({ icon: Icon, label, path }) => (
+            <Link
+              key={path}
+              to={path}
+              onClick={onClose}
+              className={navLinkClass(location.pathname === path)}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>{label}</span>
+            </Link>
+          ))}
         </div>
 
-        {/* Settings at bottom */}
         {showSettings && (
           <div className="border-t border-gray-200 px-3 py-4">
             <Link
               to="/settings"
               onClick={onClose}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors',
-                location.pathname === '/settings'
-                  ? 'bg-brand-50 text-brand-600'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-              )}
+              className={navLinkClass(location.pathname === '/settings')}
             >
               <Settings className="h-5 w-5 shrink-0" />
               <span>Settings</span>
